@@ -16,7 +16,6 @@ async function printRoles() {
 
 async function printRoutes() {
   await import('./Routers/api.js');
-  await import('./Routers/web.js');
 
   const { info } = await import('./Routers/Router.js');
   console.log('Available API routes:');
