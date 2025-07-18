@@ -5,8 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    ports:
-      - "3000:3000"
+    network_mode: "host"
     depends_on:
       - db
     volumes:
@@ -19,8 +18,7 @@ services:
   db:
     image: mysql:8.0
     container_name: mysql
-    ports:
-      - "3306:3306"
+    network_mode: "host"
     environment:
       MYSQL_ROOT_PASSWORD: example
       MYSQL_DATABASE: mydatabase
@@ -32,8 +30,7 @@ services:
   adminer:
     image: adminer
     container_name: adminer
-    ports:
-      - "8081:8080"
+    network_mode: "host"
     depends_on:
       - db
 
