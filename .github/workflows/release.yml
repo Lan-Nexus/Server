@@ -56,9 +56,13 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Copy .env.example to build directory
+        run: cp .env.example dist/.env.example
+
       - name: Zip Build
         run: |
-          zip -r server-build.zip dist/
+          cd dist
+          zip -r ../server-build.zip .
 
       - name: Upload release assets
         uses: softprops/action-gh-release@v2
