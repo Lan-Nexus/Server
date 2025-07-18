@@ -3,16 +3,12 @@ import express from 'express';
 import ViteExpress from "vite-express";
 import cors from 'cors'
 
-
 import apiRouter from './Routers/api.js';
 import authRouter from './Routers/auth.js';
-import webRouter from './Routers/web.js';
 import './db.js';
-import { Worker } from 'worker_threads';
-import path from 'path';
+
 import Ip from './ip.js';
 import './workers/sendAddress.js';
-
 
 const app = express()
 const port = Number(process.env.PORT || 3000)
@@ -41,26 +37,16 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 app.use(cors())
-
-
-app.use('/auth', authRouter); 
+app.use('/auth', authRouter);
 app.use('/api', apiRouter);
-
-
 app.get('/api/ip', (req, res) => {
   const ip = Ip(req, res);
   res.json({ ip });
 });
 
-
 ViteExpress.listen(app, port, () =>
   console.log(`Server is listening on port ${port}...`),
 );
-
-// const __filename = path.resolve(process.argv[1]);
-// const __dirname = path.dirname(__filename);
-// new Worker(path.join(__dirname, './workers/sendAddress.js'));
