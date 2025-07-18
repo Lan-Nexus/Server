@@ -57,7 +57,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Copy .env.example to build directory
-        run: cp .env.example dist/.env.example
+        run: cp .env.example dist/.env
 
       - name: Zip Build
         run: |
