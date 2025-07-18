@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   app:
@@ -11,6 +11,10 @@ services:
       - db
     volumes:
       - .:/usr/src/app
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=development
 
   db:
     image: mysql:8.0
@@ -25,7 +29,13 @@ services:
     volumes:
       - db_data:/var/lib/mysql
 
+  adminer:
+    image: adminer
+    container_name: adminer
+    ports:
+      - "8081:8080"
+    depends_on:
+      - db
+
 volumes:
   db_data:
-
-
