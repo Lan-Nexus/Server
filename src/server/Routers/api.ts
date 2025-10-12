@@ -3,14 +3,17 @@ import gamesController from '../Controllers/api/GamesApiController.js';
 import gamesSearchController from '../Controllers/api/GameSearchApiController.js';
 import steamController from '../Controllers/api/SteamApiController.js';
 import GameKeyPageController from '../Controllers/api/GameKeyApiController.js';
+import gameEventsController from '../Controllers/api/GameEventsApiController.js';
 import Router from './Router.js';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { jwtAuth } from '../jwt.js';
+import { hasPermission } from '../roles.js';
 
 const router = express.Router();
-router.use(jwtAuth as express.RequestHandler);
+const authenticatedRouter = express.Router();
+authenticatedRouter.use(jwtAuth as express.RequestHandler);
 
 console.log(path.join(process.cwd(), 'public', 'games', 'archives', 'temp'));
 const upload = multer({ dest: path.join(process.cwd(), 'public', 'games', 'temp') }); // for images
@@ -29,7 +32,7 @@ const archiveFields = [
 ];
 
 
-new Router<gamesController>(router)
+new Router<gamesController>(authenticatedRouter)
   .Permissions({
     list: 'games:list',
     read: 'games:read',
@@ -43,7 +46,7 @@ new Router<gamesController>(router)
   .put('/games/:id', gamesController, 'update', upload.fields(archiveFields))
   .delete('/games/:id', gamesController, 'delete')
 
-new Router<gamesSearchController>(router)
+new Router<gamesSearchController>(authenticatedRouter)
   .Permissions({
     list: 'games:search:list',
     read: 'games:search:read',
@@ -55,7 +58,7 @@ new Router<gamesSearchController>(router)
   .post('/games/search', gamesSearchController, 'search')
   .post('/search/create', gamesSearchController, 'create')
 
-new Router<steamController>(router)
+new Router<steamController>(authenticatedRouter)
   .Permissions({
     list: 'steam:list',
     read: 'steam:read',
@@ -65,7 +68,7 @@ new Router<steamController>(router)
   .get('/steam/:id', steamController, 'read')
   .post('/steam', steamController, 'create')
 
-new Router<GameKeyPageController>(router)
+new Router<GameKeyPageController>(authenticatedRouter)
   .Permissions({
     list: 'games:keys:list',
     create: 'games:keys:create',
@@ -79,5 +82,24 @@ new Router<GameKeyPageController>(router)
   .post('/games/:gameId/keys/:id/release', GameKeyPageController, 'release')
   .post('/games/:gameId/keys/:id/reserve', GameKeyPageController, 'reserve')
   .post('/games/:gameId/keys/reserve', GameKeyPageController, 'reserve')
+
+// Public events endpoints (no auth required)
+const gameEventsControllerInstance = new gameEventsController();
+router.get('/events', (req, res) => gameEventsControllerInstance.list(req, res));
+router.get('/events/:id', (req, res) => gameEventsControllerInstance.read(req, res));
+
+// Protected events endpoints (auth required)
+new Router<gameEventsController>(authenticatedRouter)
+  .Permissions({
+    create: 'events:create',
+    update: 'events:update',
+    delete: 'events:delete'
+  })
+  .post('/events', gameEventsController, 'create')
+  .put('/events/:id', gameEventsController, 'update')
+  .delete('/events/:id', gameEventsController, 'delete')
+
+// Mount the authenticated router
+router.use(authenticatedRouter);
 
 export default router;

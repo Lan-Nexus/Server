@@ -1,4 +1,4 @@
-import { serial, mysqlTable, text, varchar, int, mediumtext, mysqlEnum } from "drizzle-orm/mysql-core";
+import { serial, mysqlTable, text, varchar, int, mediumtext, mysqlEnum, datetime } from "drizzle-orm/mysql-core";
 
 
 export const status = ['Active', 'Draft'] as const;
@@ -45,6 +45,19 @@ export const gameKeysTable = mysqlTable("game_keys", {
   clientId: varchar("client_id", { length: 255 })
 });
 
+export const gameEventsStatus = ['upcoming', 'active', 'completed', 'cancelled'] as const;
+export const gameEventsStatusEnum = mysqlEnum('event_status', gameEventsStatus);
+
+export const gameEventsTable = mysqlTable("game_events", {
+  id: serial().primaryKey(),
+  gameId: int("game_id").notNull(), // Foreign key to gamesTable.id
+  gameName: varchar("game_name", { length: 255 }).notNull(),
+  startTime: datetime("start_time").notNull(), // ISO string
+  endTime: datetime("end_time").notNull(), // ISO string
+  status: gameEventsStatusEnum.default('upcoming').notNull(),
+  description: text("description")
+});
+
 
 export const gamesSelectSchema = createSelectSchema(gamesTable);
 export const gamesInsertSchema = createInsertSchema(gamesTable, {
@@ -65,4 +78,23 @@ export const gamesUpdateSchema = createUpdateSchema(gamesTable, {
   install: gamesSelectSchema.shape.install.optional(),
   uninstall: gamesSelectSchema.shape.uninstall.optional(),
   play: gamesSelectSchema.shape.play.optional(),
+});
+
+export const gameEventsSelectSchema = createSelectSchema(gameEventsTable);
+export const gameEventsInsertSchema = createInsertSchema(gameEventsTable, {
+  gameId: gameEventsSelectSchema.shape.gameId,
+  gameName: gameEventsSelectSchema.shape.gameName,
+  startTime: gameEventsSelectSchema.shape.startTime,
+  endTime: gameEventsSelectSchema.shape.endTime,
+  status: gameEventsSelectSchema.shape.status.optional(),
+  description: gameEventsSelectSchema.shape.description.optional(),
+});
+export const gameEventsUpdateSchema = createUpdateSchema(gameEventsTable, {
+  ...gameEventsSelectSchema.shape,
+  gameId: gameEventsSelectSchema.shape.gameId.optional(),
+  gameName: gameEventsSelectSchema.shape.gameName.optional(),
+  startTime: gameEventsSelectSchema.shape.startTime.optional(),
+  endTime: gameEventsSelectSchema.shape.endTime.optional(),
+  status: gameEventsSelectSchema.shape.status.optional(),
+  description: gameEventsSelectSchema.shape.description.optional(),
 });
