@@ -25,6 +25,11 @@ const roles: Record<string, string[]> = {
     'games:keys:delete',
     'games:keys:release',
     'games:keys:reserve',
+    'events:list',
+    'events:read',
+    'events:create',
+    'events:update',
+    'events:delete',
   ],
 }
 

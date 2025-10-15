@@ -1,5 +1,5 @@
 import Model from './Model.js';
-import { gameEventsTable } from '../db/schema.js';
+import { gameEventsTable, gamesTable } from '../db/schema.js';
 import { eq, and, gte, lte } from 'drizzle-orm';
 import { db } from '../db.js';
 
@@ -19,24 +19,83 @@ export default class GameEventModel extends Model {
     }
 
     static async list() {
-        return db.select().from(gameEventsTable);
+        return db
+            .select({
+                id: gameEventsTable.id,
+                gameId: gameEventsTable.gameId,
+                gameName: gameEventsTable.gameName,
+                startTime: gameEventsTable.startTime,
+                endTime: gameEventsTable.endTime,
+                status: gameEventsTable.status,
+                description: gameEventsTable.description,
+                gameIcon: gamesTable.icon,
+                gameLogo: gamesTable.logo,
+                gameImageCard: gamesTable.imageCard
+            })
+            .from(gameEventsTable)
+            .leftJoin(gamesTable, eq(gameEventsTable.gameId, gamesTable.id));
     }
 
     static async listByGame(gameId: number) {
-        return db.select().from(gameEventsTable).where(eq(gameEventsTable.gameId, gameId));
+        return db
+            .select({
+                id: gameEventsTable.id,
+                gameId: gameEventsTable.gameId,
+                gameName: gameEventsTable.gameName,
+                startTime: gameEventsTable.startTime,
+                endTime: gameEventsTable.endTime,
+                status: gameEventsTable.status,
+                description: gameEventsTable.description,
+                gameIcon: gamesTable.icon,
+                gameLogo: gamesTable.logo,
+                gameImageCard: gamesTable.imageCard
+            })
+            .from(gameEventsTable)
+            .leftJoin(gamesTable, eq(gameEventsTable.gameId, gamesTable.id))
+            .where(eq(gameEventsTable.gameId, gameId));
     }
 
     static async listByDateRange(startDate: string, endDate: string) {
-        return db.select().from(gameEventsTable).where(
-            and(
-                gte(gameEventsTable.startTime, startDate),
-                lte(gameEventsTable.endTime, endDate)
-            )
-        );
+        return db
+            .select({
+                id: gameEventsTable.id,
+                gameId: gameEventsTable.gameId,
+                gameName: gameEventsTable.gameName,
+                startTime: gameEventsTable.startTime,
+                endTime: gameEventsTable.endTime,
+                status: gameEventsTable.status,
+                description: gameEventsTable.description,
+                gameIcon: gamesTable.icon,
+                gameLogo: gamesTable.logo,
+                gameImageCard: gamesTable.imageCard
+            })
+            .from(gameEventsTable)
+            .leftJoin(gamesTable, eq(gameEventsTable.gameId, gamesTable.id))
+            .where(
+                and(
+                    gte(gameEventsTable.startTime, new Date(startDate)),
+                    lte(gameEventsTable.endTime, new Date(endDate))
+                )
+            );
     }
 
-    static async listByStatus(status: 'upcoming' | 'active' | 'completed' | 'cancelled') {
-        return db.select().from(gameEventsTable).where(eq(gameEventsTable.status, status));
+    static async listByStatus(status: 'active' | 'cancelled') {
+        return db
+            .select({
+                id: gameEventsTable.id,
+                gameId: gameEventsTable.gameId,
+                gameName: gameEventsTable.gameName,
+                startTime: gameEventsTable.startTime,
+                endTime: gameEventsTable.endTime,
+                status: gameEventsTable.status,
+                description: gameEventsTable.description,
+                gameIcon: gamesTable.icon,
+                gameLogo: gamesTable.logo,
+                gameImageCard: gamesTable.imageCard
+            })
+            .from(gameEventsTable)
+            .leftJoin(gamesTable, eq(gameEventsTable.gameId, gamesTable.id))
+            .where(eq(gameEventsTable.status, status));
     }
 
     static async update(id: typeof gameEventsTable.$inferSelect.id, gameEvent: Partial<typeof gameEventsTable.$inferSelect>) {
@@ -47,7 +106,7 @@ export default class GameEventModel extends Model {
         await db.delete(gameEventsTable).where(eq(gameEventsTable.id, id));
     }
 
-    static async updateStatus(id: typeof gameEventsTable.$inferSelect.id, status: 'upcoming' | 'active' | 'completed' | 'cancelled') {
+    static async updateStatus(id: typeof gameEventsTable.$inferSelect.id, status: 'active' | 'cancelled') {
         return db.update(gameEventsTable).set({ status }).where(eq(gameEventsTable.id, id));
     }
 }

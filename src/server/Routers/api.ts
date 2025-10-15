@@ -1,4 +1,5 @@
 import express from 'express';
+import { Request, Response } from 'express';
 import gamesController from '../Controllers/api/GamesApiController.js';
 import gamesSearchController from '../Controllers/api/GameSearchApiController.js';
 import steamController from '../Controllers/api/SteamApiController.js';
@@ -98,6 +99,15 @@ new Router<gameEventsController>(authenticatedRouter)
   .post('/events', gameEventsController, 'create')
   .put('/events/:id', gameEventsController, 'update')
   .delete('/events/:id', gameEventsController, 'delete')
+
+// Custom authenticated route for status updates
+authenticatedRouter.put('/events/:id/status', (req: any, res: any) => {
+  const permissions = 'events:update';
+  if (permissions && !hasPermission(req.user, permissions)) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+  gameEventsControllerInstance.updateStatus(req, res);
+});
 
 // Mount the authenticated router
 router.use(authenticatedRouter);
