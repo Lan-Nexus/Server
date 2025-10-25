@@ -32,4 +32,9 @@ export default class UserModel extends Model {
     const result = await db.select().from(usersTable).where(eq(usersTable.clientId, clientId));
     return result[0];
   }
+
+  static async updateByClientId(clientId: string, data: any) {
+    await db.update(usersTable).set(data).where(eq(usersTable.clientId, clientId));
+    return await this.findByClientId(clientId);
+  }
 }

@@ -132,4 +132,45 @@ export default class UsersController extends PageController {
       this.sendStatus(res, StatusCodes.BAD_REQUEST, error, { ...body, clientId: req.params.clientId });
     }
   }
+
+  // Alternative endpoint to update user by client ID only (not used)
+  public async updateByClientIdOnly(req: Request, res: Response) {
+    await this.preUpdate(req, res);
+    const body = await this.mapRequestBody(req.body, req, res);
+    try {
+      const { clientId } = req.params;
+      if (!clientId) {
+        this.sendStatus(res, StatusCodes.BAD_REQUEST, "Client ID is required");
+        return;
+      }
+
+      // Check if user exists
+      const existingUser = await UserModel.findByClientId(clientId);
+      if (!existingUser) {
+        this.sendStatus(res, StatusCodes.NOT_FOUND, "User not found");
+        return;
+      }
+
+      const data = await this.UpdateSchema.parseAsync({
+        ...body,
+        id: existingUser.id, // Include the actual ID for validation
+      });
+
+      // Check if clientId is being changed and already exists
+      if (data.clientId && data.clientId !== clientId) {
+        const existingUserByNewClientId = await UserModel.findByClientId(data.clientId);
+        if (existingUserByNewClientId && existingUserByNewClientId.id !== existingUser.id) {
+          this.sendStatus(res, StatusCodes.CONFLICT, "User with this client ID already exists");
+          return;
+        }
+      }
+
+      const updatedUser = await UserModel.updateByClientId(clientId, data);
+      const finalData = await this.postUpdate?.(req, res, updatedUser) ?? updatedUser;
+      if (this.handleHxRedirect(req, res, 'update', finalData)) return;
+      this.renderWithViews(res, 'update', finalData);
+    } catch (error) {
+      this.sendStatus(res, StatusCodes.BAD_REQUEST, error, { ...body, clientId: req.params.clientId });
+    }
+  }
 }
