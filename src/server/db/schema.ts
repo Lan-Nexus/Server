@@ -13,8 +13,7 @@ import {
 export const usersTable = mysqlTable('users_table', {
   id: serial().primaryKey(),
   name: varchar({ length: 255 }).notNull(),
-  age: int().notNull(),
-  email: varchar({ length: 255 }).notNull().unique(),
+  clientId: varchar('client_id', { length: 255 }).notNull(),
 });
 
 export const gamesTable = mysqlTable("games", {
@@ -97,4 +96,15 @@ export const gameEventsUpdateSchema = createUpdateSchema(gameEventsTable, {
   endTime: gameEventsSelectSchema.shape.endTime.optional(),
   status: gameEventsSelectSchema.shape.status.optional(),
   description: gameEventsSelectSchema.shape.description.optional(),
+});
+
+export const usersSelectSchema = createSelectSchema(usersTable);
+export const usersInsertSchema = createInsertSchema(usersTable, {
+  name: usersSelectSchema.shape.name,
+  clientId: usersSelectSchema.shape.clientId,
+});
+export const usersUpdateSchema = createUpdateSchema(usersTable, {
+  ...usersSelectSchema.shape,
+  name: usersSelectSchema.shape.name.optional(),
+  clientId: usersSelectSchema.shape.clientId.optional(),
 });
