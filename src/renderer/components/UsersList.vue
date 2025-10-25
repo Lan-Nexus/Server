@@ -190,10 +190,11 @@
           <!-- User Header -->
           <div class="flex items-start justify-between mb-4">
             <div class="flex items-center gap-3">
-              <UserAvatar 
-                :name="user.name" 
+              <UserAvatar
+                :name="user.name"
                 size="md"
                 :hover="true"
+                :avatar="user.avatar"
               />
               <div>
                 <h3 class="card-title text-lg">{{ user.name }}</h3>

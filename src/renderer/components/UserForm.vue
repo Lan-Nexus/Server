@@ -28,17 +28,20 @@
           :name="formData.name || 'User'" 
           size="lg"
           :hover="false"
+          :avatar="formData.avatar"
         />
         <div class="flex-1">
           <p class="text-sm text-base-content/70">
             This is how the user's avatar will appear throughout the application.
           </p>
           <p class="text-xs text-base-content/50 mt-1">
-            Avatar color is automatically generated based on the user's name.
+            {{ formData.avatar ? 'Custom avatar from external source' : 'Avatar color is automatically generated based on the user\'s name.' }}
           </p>
         </div>
       </div>
     </div>
+
+
 
     <!-- Name Field -->
     <div class="form-control">
@@ -237,7 +240,8 @@ const usersStore = useUsersStore()
 
 const formData = ref<CreateUserType>({
   name: '',
-  clientId: ''
+  clientId: '',
+  avatar: null
 })
 
 const errors = ref({
@@ -261,7 +265,8 @@ onMounted(() => {
   if (props.user) {
     formData.value = {
       name: props.user.name,
-      clientId: props.user.clientId
+      clientId: props.user.clientId,
+      avatar: props.user.avatar
     }
     isClientIdValid.value = true
   }
@@ -272,7 +277,8 @@ watch(() => props.user, (newUser) => {
   if (newUser) {
     formData.value = {
       name: newUser.name,
-      clientId: newUser.clientId
+      clientId: newUser.clientId,
+      avatar: newUser.avatar
     }
     isClientIdValid.value = true
   } else {
@@ -339,7 +345,8 @@ function handleSubmit() {
   
   emit('submit', {
     name: formData.value.name.trim(),
-    clientId: formData.value.clientId.trim()
+    clientId: formData.value.clientId.trim(),
+    avatar: formData.value.avatar
   })
 }
 
@@ -347,7 +354,8 @@ function handleSubmit() {
 function resetForm() {
   formData.value = {
     name: '',
-    clientId: ''
+    clientId: '',
+    avatar: null
   }
   errors.value = {
     name: '',
@@ -355,6 +363,7 @@ function resetForm() {
   }
   isClientIdValid.value = false
 }
+
 
 // Watch form data for real-time validation
 watch(() => formData.value.name, validateName)
@@ -367,4 +376,5 @@ watch(() => formData.value.clientId, () => {
     isClientIdValid.value = false
   }
 })
+
 </script>
