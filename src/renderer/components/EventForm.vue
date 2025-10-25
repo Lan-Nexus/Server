@@ -25,6 +25,9 @@
         v-model.number="form.gameId"
         @change="updateGameName"
         class="select select-bordered w-full bg-base-100/80 focus:bg-base-100 transition-all duration-200"
+        :class="{
+          'border-red-500': !form.gameId
+        }"
         required
       >
         <option value="">Select a game</option>
@@ -61,6 +64,9 @@
           type="datetime-local"
           v-model="form.startTime"
           class="input input-bordered w-full bg-base-100/80 focus:bg-base-100 transition-all duration-200"
+          :class="{
+            'border-red-500': !isDatesRight
+          }"
           required
         />
       </div>
@@ -90,6 +96,9 @@
           type="datetime-local"
           v-model="form.endTime"
           class="input input-bordered w-full bg-base-100/80 focus:bg-base-100 transition-all duration-200"
+          :class="{
+            'border-red-500': !isDatesRight
+          }"
           required
         />
       </div>
@@ -171,6 +180,9 @@
         v-model="form.description"
         class="textarea textarea-bordered w-full h-24 bg-base-100/80 focus:bg-base-100 transition-all duration-200 resize-none"
         placeholder="Enter event description (optional)..."
+        :class="{
+          'border-red-500': form.description == ''
+        }"
       ></textarea>
     </div>
 
@@ -262,14 +274,17 @@ const form = ref<CreateEventType>({
 
 const games = ref<getGameType[]>([]);
 
+const isDatesRight = computed(()=>{
+  return new Date(form.value.startTime) < new Date(form.value.endTime)
+})
+
 const isFormValid = computed(() => {
   const valid =
     form.value.gameId > 0 &&
     form.value.gameName.trim() !== "" &&
     form.value.startTime !== "" &&
     form.value.endTime !== "" &&
-    new Date(form.value.startTime) < new Date(form.value.endTime);
-
+    isDatesRight.value
   return valid;
 });
 
