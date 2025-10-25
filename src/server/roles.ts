@@ -4,6 +4,8 @@ const roles: Record<string, string[]> = {
     'games:read',
     'games:keys:release',
     'games:keys:reserve',
+    'users:create',
+    'users:update',
   ],
   admin: [
     'games:list',
@@ -30,6 +32,11 @@ const roles: Record<string, string[]> = {
     'events:create',
     'events:update',
     'events:delete',
+    'users:list',
+    'users:read',
+    'users:delete',
+    'users:create',
+    'users:update',
   ],
 }
 

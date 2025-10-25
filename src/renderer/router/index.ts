@@ -8,6 +8,7 @@ import CreateGameSteamView from '@/views/CreateGameSteamView.vue'
 import FindGameView from '@/views/FindGameView.vue'
 import addGameView from '@/views/addGameView.vue'
 import EventsView from '@/views/EventsView.vue'
+import UsersView from '@/views/UsersView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -56,6 +57,11 @@ const router = createRouter({
       path: '/events',
       name: 'events',
       component: EventsView,
+    },
+    {
+      path: '/users',
+      name: 'users',
+      component: UsersView,
     },
   ],
 })
