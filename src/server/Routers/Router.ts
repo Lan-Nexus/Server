@@ -2,11 +2,15 @@ import { Router as ExpressRouter } from 'express';
 import { PageController } from '../Controllers/PageController.js';
 import { jwtAuth } from '../jwt.js';
 import roles, { hasPermission } from '../roles.js';
+import { Request, Response } from 'express';
 
-type routerHandlerGet = 'list' | 'read' | 'renderCreateForm' | 'renderUpdateForm';
-type routerHandlerPost = 'create' | 'release' | 'reserve' | 'search' | 'uploadArchive';
-type routerHandlerPut = 'update';
-type routerHandlerDelete = 'delete';
+// Extract method names from controller that match the expected signature
+type ExtractMethods<T> = {
+  [K in keyof T]: T[K] extends (req: Request, res: Response) => any ? K : never;
+}[keyof T];
+
+// Dynamic handler types based on the controller
+type ControllerMethods<T extends PageController> = ExtractMethods<T> & string;
 
 export const info: Router<any>[] = [];
 
@@ -55,7 +59,7 @@ export default class Router<T extends PageController> {
     };
   }
 
-  public get(path: string, object: new () => T, requestHandler: routerHandlerGet, middleware?: any) {
+  public get(path: string, object: new () => T, requestHandler: ControllerMethods<T>, middleware?: any) {
     const obj = this.#makeOrFindObject(object as new () => T);
     const handler = this.#makeHandler(obj, requestHandler);
     if (middleware) {
@@ -67,7 +71,7 @@ export default class Router<T extends PageController> {
     return this;
   }
 
-  public post(path: string, object: new () => T, requestHandler: routerHandlerPost, middleware?: any) {
+  public post(path: string, object: new () => T, requestHandler: ControllerMethods<T>, middleware?: any) {
     const obj = this.#makeOrFindObject(object as new () => T);
     const handler = this.#makeHandler(obj, requestHandler);
     if (middleware) {
@@ -79,7 +83,7 @@ export default class Router<T extends PageController> {
     return this;
   }
 
-  public put(path: string, object: new () => T, requestHandler: routerHandlerPut, middleware?: any) {
+  public put(path: string, object: new () => T, requestHandler: ControllerMethods<T>, middleware?: any) {
     const obj = this.#makeOrFindObject(object as new () => T);
     const handler = this.#makeHandler(obj, requestHandler);
     if (middleware) {
@@ -91,7 +95,7 @@ export default class Router<T extends PageController> {
     return this;
   }
 
-  public delete(path: string, object: new () => T, requestHandler: routerHandlerDelete, middleware?: any) {
+  public delete(path: string, object: new () => T, requestHandler: ControllerMethods<T>, middleware?: any) {
     const obj = this.#makeOrFindObject(object as new () => T);
     const handler = this.#makeHandler(obj, requestHandler);
     if (middleware) {
@@ -100,6 +104,18 @@ export default class Router<T extends PageController> {
       this.#router.delete(path, handler);
     }
     this.routes.push({ method: 'DELETE', path , name: requestHandler });
+    return this;
+  }
+
+  public patch(path: string, object: new () => T, requestHandler: ControllerMethods<T>, middleware?: any) {
+    const obj = this.#makeOrFindObject(object as new () => T);
+    const handler = this.#makeHandler(obj, requestHandler);
+    if (middleware) {
+      this.#router.patch(path, middleware, handler);
+    } else {
+      this.#router.patch(path, handler);
+    }
+    this.routes.push({ method: 'PATCH', path , name: requestHandler });
     return this;
   }
 

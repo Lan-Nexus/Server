@@ -22,39 +22,39 @@ const RATE_LIMIT_MAX_REQUESTS = 10; // 10 requests per minute
 const rateLimit = (req: Request, res: Response, next: express.NextFunction) => {
   const clientIp = req.ip || req.connection.remoteAddress || 'unknown';
   const now = Date.now();
-  
+
   // Clean up expired entries
   for (const [ip, data] of rateLimitStore.entries()) {
     if (now > data.resetTime) {
       rateLimitStore.delete(ip);
     }
   }
-  
+
   // Get or create rate limit data for this IP
   let limitData = rateLimitStore.get(clientIp);
   if (!limitData || now > limitData.resetTime) {
     limitData = { count: 0, resetTime: now + RATE_LIMIT_WINDOW };
     rateLimitStore.set(clientIp, limitData);
   }
-  
+
   // Check if limit exceeded
   if (limitData.count >= RATE_LIMIT_MAX_REQUESTS) {
-    return res.status(429).json({ 
+    return res.status(429).json({
       error: 'Too many requests. Please try again later.',
       retryAfter: Math.ceil((limitData.resetTime - now) / 1000)
     });
   }
-  
+
   // Increment counter
   limitData.count++;
-  
+
   // Add rate limit headers
   res.set({
     'X-RateLimit-Limit': RATE_LIMIT_MAX_REQUESTS.toString(),
     'X-RateLimit-Remaining': (RATE_LIMIT_MAX_REQUESTS - limitData.count).toString(),
     'X-RateLimit-Reset': new Date(limitData.resetTime).toISOString()
   });
-  
+
   next();
 };
 
@@ -136,77 +136,42 @@ new Router<UsersController>(authenticatedRouter)
     read: 'users:read',
     create: 'users:create',
     update: 'users:update',
-    delete: 'users:delete'
+    delete: 'users:delete',
+    findByClientId: 'users:read',
+    updateByClientId: 'users:update',
+    updateByClientIdOnly: 'users:update'
   })
   .get('/users', UsersController, 'list')
+  .get('/users/by-client-id/:clientId', UsersController, 'findByClientId')
   .get('/users/:id', UsersController, 'read')
   .post('/users', UsersController, 'create')
   .put('/users/:id', UsersController, 'update')
+  .put('/users/by-client-id/:clientId', UsersController, 'updateByClientId')
+  .patch('/users/client-id/:clientId', UsersController, 'updateByClientId')
+  .patch('/users/update-by-client-id/:clientId', UsersController, 'updateByClientIdOnly')
   .delete('/users/:id', UsersController, 'delete')
 
-// Custom user endpoints
-const usersControllerInstance = new UsersController();
-authenticatedRouter.get('/users/by-client-id/:clientId', (req: any, res: any) => {
-  const permissions = 'users:read';
-  if (permissions && !hasPermission(req.user, permissions)) {
-    return res.status(403).json({ error: 'Forbidden' });
-  }
-  usersControllerInstance.findByClientId(req, res);
-});
-
-authenticatedRouter.put('/users/by-client-id/:clientId', (req: any, res: any) => {
-  const permissions = 'users:update';
-  if (permissions && !hasPermission(req.user, permissions)) {
-    return res.status(403).json({ error: 'Forbidden' });
-  }
-  usersControllerInstance.updateByClientId(req, res);
-});
-
-// New PATCH endpoint for updating user by client ID only (not used)
-authenticatedRouter.patch('/users/client-id/:clientId', (req: any, res: any) => {
-  const permissions = 'users:update';
-  if (permissions && !hasPermission(req.user, permissions)) {
-    return res.status(403).json({ error: 'Forbidden' });
-  }
-  usersControllerInstance.updateByClientId(req, res);
-});
-
-// Additional PATCH endpoint using the new updateByClientIdOnly method (not used)
-authenticatedRouter.patch('/users/update-by-client-id/:clientId', (req: any, res: any) => {
-  const permissions = 'users:update';
-  if (permissions && !hasPermission(req.user, permissions)) {
-    return res.status(403).json({ error: 'Forbidden' });
-  }
-  usersControllerInstance.updateByClientIdOnly(req, res);
-});
 
 
 
 
 // Public events endpoints (no auth required)
-const gameEventsControllerInstance = new gameEventsController();
-router.get('/events', (req, res) => gameEventsControllerInstance.list(req, res));
-router.get('/events/:id', (req, res) => gameEventsControllerInstance.read(req, res));
+new Router<gameEventsController>(router)
+  .get('/events', gameEventsController, 'list')
+  .get('/events/:id', gameEventsController, 'read');
 
 // Protected events endpoints (auth required)
 new Router<gameEventsController>(authenticatedRouter)
   .Permissions({
     create: 'events:create',
     update: 'events:update',
-    delete: 'events:delete'
+    delete: 'events:delete',
+    updateStatus: 'events:update'
   })
   .post('/events', gameEventsController, 'create')
   .put('/events/:id', gameEventsController, 'update')
+  .put('/events/:id/status', gameEventsController, 'updateStatus')
   .delete('/events/:id', gameEventsController, 'delete')
-
-// Custom authenticated route for status updates
-authenticatedRouter.put('/events/:id/status', (req: any, res: any) => {
-  const permissions = 'events:update';
-  if (permissions && !hasPermission(req.user, permissions)) {
-    return res.status(403).json({ error: 'Forbidden' });
-  }
-  gameEventsControllerInstance.updateStatus(req, res);
-});
 
 // Mount the authenticated router
 router.use(authenticatedRouter);
