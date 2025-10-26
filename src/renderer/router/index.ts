@@ -9,6 +9,8 @@ import FindGameView from '@/views/FindGameView.vue'
 import addGameView from '@/views/addGameView.vue'
 import EventsView from '@/views/EventsView.vue'
 import UsersView from '@/views/UsersView.vue'
+import { useAuthStore } from '@/stores/auth'
+
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -64,6 +66,37 @@ const router = createRouter({
       component: UsersView,
     },
   ],
+})
+
+// Global navigation guard
+router.beforeEach(async (to, from, next) => {
+  const authStore = useAuthStore()
+  
+  // Initialize auth state from localStorage on first load
+  if (!authStore.isAuthenticated) {
+    const hasValidToken = authStore.initializeAuth()
+    
+    // If we have a token, validate it
+    if (hasValidToken) {
+      const isValid = await authStore.validateToken()
+      if (!isValid) {
+        authStore.clearAuth()
+      }
+    }
+  }
+  
+  // Check if route requires authentication
+  const requiresAuth = to.path !== '/login'
+  
+  if (requiresAuth && !authStore.isAuthenticated) {
+    // Redirect to login page with return URL
+    next({ path: '/login', query: { redirect: to.fullPath } })
+  } else if (to.path === '/login' && authStore.isAuthenticated) {
+    // Redirect to home if already authenticated
+    next('/')
+  } else {
+    next()
+  }
 })
 
 export default router

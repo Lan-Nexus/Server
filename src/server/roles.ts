@@ -8,6 +8,16 @@ const roles: Record<string, string[]> = {
     'users:update:by-client-id',
     'users:create',
   ],
+  user:[
+      'games:list',
+      'games:read',
+      'games:keys:release',
+      'games:keys:reserve',
+      'users:read:by-client-id',
+      'users:update:by-client-id',
+      'users:create',
+      'users:authenticate',
+    ],
   admin: [
     'games:list',
     'games:create',
@@ -38,6 +48,9 @@ const roles: Record<string, string[]> = {
     'users:delete',
     'users:create',
     'users:update',
+    'users:password:set',
+    'users:password:set:by-client-id',
+    'users:authenticate',
   ],
 }
 

@@ -2,6 +2,7 @@ import { db } from "../db.js";
 import { usersTable, type Avatar } from "../db/schema.js";
 import { eq } from "drizzle-orm";
 import Model from "./Model.js";
+import bcrypt from "bcryptjs";
 
 export default class UserModel extends Model {
   // Helper method to serialize avatar object to JSON string
@@ -47,6 +48,10 @@ export default class UserModel extends Model {
 
   static async create(data: any) {
     const serializedData = this.serializeAvatar(data);
+    // Hash password if provided
+    if (serializedData.password) {
+      serializedData.password = bcrypt.hashSync(serializedData.password, 10);
+    }
     const result = await db.insert(usersTable).values(serializedData);
     return await this.read(result[0].insertId);
   }
@@ -58,6 +63,10 @@ export default class UserModel extends Model {
 
   static async update(id: number, data: any) {
     const serializedData = this.serializeAvatar(data);
+    // Hash password if provided
+    if (serializedData.password) {
+      serializedData.password = bcrypt.hashSync(serializedData.password, 10);
+    }
     await db.update(usersTable).set(serializedData).where(eq(usersTable.id, id));
     return await this.read(id);
   }
@@ -72,6 +81,42 @@ export default class UserModel extends Model {
     return results.map(user => this.parseAvatar(user));
   }
 
+  // Method to verify password
+  static verifyPassword(plainPassword: string, hashedPassword: string): boolean {
+    return bcrypt.compareSync(plainPassword, hashedPassword);
+  }
+
+  // Method to set password for existing user
+  static async setPassword(id: number, password: string) {
+    const hashedPassword = bcrypt.hashSync(password, 10);
+    await db.update(usersTable).set({ password: hashedPassword }).where(eq(usersTable.id, id));
+    return await this.read(id);
+  }
+
+  // Method to set password by client ID
+  static async setPasswordByClientId(clientId: string, password: string) {
+    const hashedPassword = bcrypt.hashSync(password, 10);
+    await db.update(usersTable).set({ password: hashedPassword }).where(eq(usersTable.clientId, clientId));
+    return await this.findByClientId(clientId);
+  }
+
+  // Method to authenticate user by clientId and password
+  static async authenticate(clientId: string, password: string) {
+    const user = await this.findByClientId(clientId);
+    if (!user || !user.password) {
+      return null;
+    }
+
+    const isValid = this.verifyPassword(password, user.password);
+    if (isValid) {
+      // Return user without password
+      const { password: _, ...userWithoutPassword } = user;
+      return userWithoutPassword;
+    }
+
+    return null;
+  }
+
   static async findByClientId(clientId: string) {
     const result = await db.select().from(usersTable).where(eq(usersTable.clientId, clientId));
     return this.parseAvatar(result[0]);
@@ -79,6 +124,10 @@ export default class UserModel extends Model {
 
   static async updateByClientId(clientId: string, data: any) {
     const serializedData = this.serializeAvatar(data);
+    // Hash password if provided
+    if (serializedData.password) {
+      serializedData.password = bcrypt.hashSync(serializedData.password, 10);
+    }
     await db.update(usersTable).set(serializedData).where(eq(usersTable.clientId, clientId));
     return await this.findByClientId(clientId);
   }

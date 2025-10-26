@@ -194,11 +194,18 @@
                 :name="user.name"
                 size="md"
                 :hover="true"
-                :avatar="user.avatar"
+                :avatar="user.avatar || undefined"
               />
               <div>
                 <h3 class="card-title text-lg">{{ user.name }}</h3>
-                <p class="text-sm text-base-content/60">ID: {{ user.id }}</p>
+                <div class="flex items-center gap-2">
+                  <p class="text-sm text-base-content/60">ID: {{ user.id }}</p>
+                  <span class="badge badge-xs" :class="{
+                    'badge-primary': user.role === 'admin',
+                    'badge-secondary': user.role === 'user',
+                    'badge-neutral': user.role === 'guest'
+                  }">{{ user.role || 'user' }}</span>
+                </div>
               </div>
             </div>
 
@@ -241,6 +248,28 @@
                       />
                     </svg>
                     Edit User
+                  </button>
+                </li>
+                <li>
+                  <button
+                    @click="handleSetPassword(user)"
+                    class="flex items-center gap-2 hover:bg-warning/10 hover:text-warning"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      class="h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M12 15v2m-6 4h12a2 2 0 002-2v-1a2 2 0 00-2-2H6a2 2 0 00-2 2v1a2 2 0 002 2zM11 5a2 2 0 012 0"
+                      />
+                    </svg>
+                    Set Password
                   </button>
                 </li>
                 <li>
@@ -299,6 +328,16 @@
                 <div class="text-xs text-base-content/60 mb-1">Client ID</div>
                 <div class="font-mono text-sm font-medium">{{ user.clientId }}</div>
               </div>
+              <div class="flex items-center justify-between mt-2">
+                <div>
+                  <div class="text-xs text-base-content/60 mb-1">Role</div>
+                  <div class="badge badge-sm" :class="{
+                    'badge-primary': user.role === 'admin',
+                    'badge-secondary': user.role === 'user',
+                    'badge-neutral': user.role === 'guest'
+                  }">{{ user.role || 'user' }}</div>
+                </div>
+              </div>
               <button
                 @click="handleCopyClientId(user.clientId)"
                 class="btn btn-ghost btn-xs hover:btn-info"
@@ -344,6 +383,15 @@
         <span class="font-medium">Client ID copied to clipboard!</span>
       </div>
     </div>
+
+    <!-- Password Modal -->
+    <PasswordModal
+      :user="userForPassword"
+      :show="showPasswordModal"
+      @close="closePasswordModal"
+      @success="handlePasswordSuccess"
+      @error="handlePasswordError"
+    />
 
     <!-- Delete Confirmation Modal -->
     <input
@@ -398,6 +446,46 @@
       </div>
       <label class="modal-backdrop" for="delete-modal">Close</label>
     </div>
+
+    <!-- Success Toast -->
+    <div v-if="showSuccessToast" class="toast toast-top toast-end z-50">
+      <div class="alert alert-success shadow-xl border border-success/20">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="stroke-current shrink-0 h-6 w-6"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+        <span class="font-medium">{{ successMessage }}</span>
+      </div>
+    </div>
+
+    <!-- Error Toast -->
+    <div v-if="showErrorToast" class="toast toast-top toast-end z-50">
+      <div class="alert alert-error shadow-xl border border-error/20">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="stroke-current shrink-0 h-6 w-6"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+        <span class="font-medium">{{ errorMessage }}</span>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -405,6 +493,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useUsersStore, type User } from '@/stores/users'
 import UserAvatar from '@/components/common/UserAvatar.vue'
+import PasswordModal from '@/components/PasswordModal.vue'
 
 interface Emits {
   (e: 'create'): void
@@ -420,12 +509,37 @@ const showCopyToast = ref(false)
 const showDeleteModal = ref(false)
 const userToDelete = ref<User | null>(null)
 
+// Password management
+const showPasswordModal = ref(false)
+const userForPassword = ref<User | null>(null)
+
+// Toast messages
+const showSuccessToast = ref(false)
+const showErrorToast = ref(false)
+const successMessage = ref('')
+const errorMessage = ref('')
+
 // Computed properties
 const filteredUsers = computed(() => {
   return usersStore.searchUsers(searchTerm.value)
 })
 
-
+// Toast helper function
+function showToast(message: string, isError = false) {
+  if (isError) {
+    errorMessage.value = message
+    showErrorToast.value = true
+    setTimeout(() => {
+      showErrorToast.value = false
+    }, 3000)
+  } else {
+    successMessage.value = message
+    showSuccessToast.value = true
+    setTimeout(() => {
+      showSuccessToast.value = false
+    }, 3000)
+  }
+}
 
 // Handle copying client ID to clipboard
 async function handleCopyClientId(clientId: string) {
@@ -438,6 +552,28 @@ async function handleCopyClientId(clientId: string) {
   } catch (err) {
     console.error('Failed to copy to clipboard:', err)
   }
+}
+
+// Handle password setting
+function handleSetPassword(user: User) {
+  userForPassword.value = user
+  showPasswordModal.value = true
+}
+
+// Close password modal
+function closePasswordModal() {
+  showPasswordModal.value = false
+  userForPassword.value = null
+}
+
+// Handle password success
+function handlePasswordSuccess(message: string) {
+  showToast(message)
+}
+
+// Handle password error
+function handlePasswordError(message: string) {
+  showToast(message, true)
 }
 
 // Handle delete user
@@ -454,8 +590,9 @@ async function confirmDeleteUser() {
     await usersStore.deleteUser(userToDelete.value.id)
     showDeleteModal.value = false
     userToDelete.value = null
-  } catch (error) {
-    console.error('Failed to delete user:', error)
+    showToast('User deleted successfully')
+  } catch (error: any) {
+    showToast(error.message || 'Failed to delete user', true)
   }
 }
 

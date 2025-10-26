@@ -17,19 +17,24 @@ export interface User {
   id: number
   name: string
   clientId: string
+  role?: string
   avatar?: Avatar | null
 }
 
 export interface CreateUserType {
   name: string
   clientId: string
+  role?: string
   avatar?: Avatar | null
+  password?: string
 }
 
 export interface UpdateUserType {
   name?: string
   clientId?: string
+  role?: string
   avatar?: Avatar | null
+  password?: string
 }
 
 export const useUsersStore = defineStore('users', () => {
@@ -115,6 +120,50 @@ export const useUsersStore = defineStore('users', () => {
     }
   }
 
+  // Set password for user by ID
+  async function setPassword(id: number, password: string) {
+    isLoading.value = true
+    error.value = null
+
+    try {
+      const response = await api.post(`/api/users/${id}/password`, { password })
+      const updatedUser = response.data.data
+      const index = users.value.findIndex(user => user.id === id)
+      if (index !== -1) {
+        users.value[index] = updatedUser
+      }
+      return updatedUser
+    } catch (err: any) {
+      error.value = err.response?.data?.error || err.message || 'Failed to set password'
+      throw err
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  // Set password for user by client ID
+  async function setPasswordByClientId(clientId: string, password: string) {
+    isLoading.value = true
+    error.value = null
+
+    try {
+      const response = await api.post(`/api/users/by-client-id/${clientId}/password`, { password })
+      const updatedUser = response.data.data
+      const index = users.value.findIndex(user => user.clientId === clientId)
+      if (index !== -1) {
+        users.value[index] = updatedUser
+      }
+      return updatedUser
+    } catch (err: any) {
+      error.value = err.response?.data?.error || err.message || 'Failed to set password'
+      throw err
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+
+
   // Delete a user
   async function deleteUser(id: number) {
     isLoading.value = true
@@ -195,9 +244,12 @@ export const useUsersStore = defineStore('users', () => {
     fetchUsers,
     createUser,
     updateUser,
+    updateUserByClientId,
     deleteUser,
     getUserById,
     findUserByClientId,
+    setPassword,
+    setPasswordByClientId,
     isClientIdAvailable,
     clearError,
     resetStore,

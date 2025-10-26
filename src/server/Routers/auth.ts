@@ -1,28 +1,51 @@
 import { Router } from 'express';
-import bcrypt from 'bcryptjs';
-import { signJwt } from '../jwt.js';
 import dayjs from 'dayjs';
+import UserModel from '../Models/User.js';
+import { z } from 'zod';
+import { signJwt } from '../jwt.js';
 
 const router = Router();
 
-const username = process.env.ADMIN_USERNAME || 'admin';
-const passwordHash = bcrypt.hashSync(process.env.ADMIN_PASSWORD || 'password', 10);
+// User authentication endpoint (doesn't require JWT)
+router.post('/login', async (req: any, res: any) => {
+  try {
+    const loginSchema = z.object({
+      clientId: z.string().min(1, "Client ID is required"),
+      password: z.string().min(1, "Password is required"),
+    });
 
-router.post('/login', (req: any, res: any) => {
-  const { username: inputUsername, password } = req.body;
-  if (!inputUsername || !password) {
-    return res.status(400).json({ error: 'Username and password required' });
+    const { clientId, password } = await loginSchema.parseAsync(req.body);
+
+    const user = await UserModel.authenticate(clientId, password);
+    
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    const authTime = Number(process.env.AUTH_TIME) || 1;
+    const expires = dayjs().add(authTime, 'hour');
+    const expiresIn = expires.diff(dayjs(), 'seconds');
+    const token = signJwt({ 
+      clientId: user.clientId, 
+      userId: user.id,
+      role: user.role || 'user' 
+    }, expiresIn);
+
+    res.json({ 
+      token, 
+      expires: expires.toISOString(), 
+      role: user.role || 'user',
+      user: {
+        id: user.id,
+        name: user.name,
+        clientId: user.clientId,
+        role: user.role,
+        avatar: user.avatar
+      }
+    });
+  } catch (error) {
+    res.status(400).json({ error: (error as Error).message || 'Invalid request' });
   }
-  if (inputUsername !== username || !bcrypt.compareSync(password, passwordHash)) {
-    return res.status(401).json({ error: 'Invalid credentials' });
-  }
-
-  const authTime = Number(process.env.AUTH_TIME) || 1;
-  const expires = dayjs().add(authTime, 'hour');
-  const expiresIn = expires.diff(dayjs(), 'seconds');
-  const token = signJwt({ username: inputUsername, role: 'admin' }, expiresIn);
-
-  res.json({ token, expires: expires.toISOString(), role: 'admin' });
 });
 
 export default router;

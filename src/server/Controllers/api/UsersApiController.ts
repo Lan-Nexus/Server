@@ -7,11 +7,17 @@ import UserModel from "../../Models/User.js";
 import { Request, Response } from "express";
 import { PageController } from "../PageController.js";
 import { StatusCodes } from "http-status-codes";
+import { z } from "zod";
 
 export default class UsersController extends PageController {
   constructor() {
     super(UserModel, usersSelectSchema, usersInsertSchema, usersUpdateSchema);
   }
+
+  // Schema for password setting
+  private passwordSchema = z.object({
+    password: z.string().min(6, "Password must be at least 6 characters"),
+  });
 
   public async mapRequestBody(body: any, req: Request, res: Response) {
     if (body.id) {
@@ -26,6 +32,11 @@ export default class UsersController extends PageController {
       } catch (e) {
         // If parsing fails, leave as string and let validation handle it
       }
+    }
+    
+    // Ensure role has a default value
+    if (!body.role || body.role.trim() === '') {
+      body.role = 'user';
     }
     
     return body;
@@ -182,6 +193,116 @@ export default class UsersController extends PageController {
       this.renderWithViews(res, 'update', finalData);
     } catch (error) {
       this.sendStatus(res, StatusCodes.BAD_REQUEST, error, { ...body, clientId: req.params.clientId });
+    }
+  }
+
+  // Set password for user by ID
+  public async setPassword(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const userId = Number(id);
+
+      if (!userId || isNaN(userId)) {
+        this.sendStatus(res, StatusCodes.BAD_REQUEST, "Invalid user ID");
+        return;
+      }
+
+      const data = await this.passwordSchema.parseAsync(req.body);
+
+      // Check if user exists
+      const existingUser = await UserModel.read(userId);
+      if (!existingUser) {
+        this.sendStatus(res, StatusCodes.NOT_FOUND, "User not found");
+        return;
+      }
+
+      const updatedUser = await UserModel.setPassword(userId, data.password);
+      
+      // Remove password from response
+      const { password: _, ...userWithoutPassword } = updatedUser;
+      
+      this.renderWithViews(res, 'update', userWithoutPassword);
+    } catch (error) {
+      this.sendStatus(res, StatusCodes.BAD_REQUEST, error);
+    }
+  }
+
+  // Set password for user by client ID
+  public async setPasswordByClientId(req: Request, res: Response) {
+    try {
+      const { clientId } = req.params;
+
+      if (!clientId) {
+        this.sendStatus(res, StatusCodes.BAD_REQUEST, "Client ID is required");
+        return;
+      }
+
+      const data = await this.passwordSchema.parseAsync(req.body);
+
+      // Check if user exists
+      const existingUser = await UserModel.findByClientId(clientId);
+      if (!existingUser) {
+        this.sendStatus(res, StatusCodes.NOT_FOUND, "User not found");
+        return;
+      }
+
+      const updatedUser = await UserModel.setPasswordByClientId(clientId, data.password);
+      
+      // Remove password from response
+      const { password: _, ...userWithoutPassword } = updatedUser;
+      
+      this.renderWithViews(res, 'update', userWithoutPassword);
+    } catch (error) {
+      this.sendStatus(res, StatusCodes.BAD_REQUEST, error);
+    }
+  }
+
+  // Authenticate user
+  public async authenticate(req: Request, res: Response) {
+    try {
+      const authSchema = z.object({
+        clientId: z.string().min(1, "Client ID is required"),
+        password: z.string().min(1, "Password is required"),
+      });
+
+      const data = await authSchema.parseAsync(req.body);
+
+      const user = await UserModel.authenticate(data.clientId, data.password);
+      
+      if (!user) {
+        this.sendStatus(res, StatusCodes.UNAUTHORIZED, "Invalid credentials");
+        return;
+      }
+
+      this.renderWithViews(res, 'read', user);
+    } catch (error) {
+      this.sendStatus(res, StatusCodes.BAD_REQUEST, error);
+    }
+  }
+
+  // Get current user info
+  public async me(req: Request, res: Response) {
+    try {
+      // Extract user info from JWT token
+      const user = (req as any).user;
+      
+      if (!user || !user.userId) {
+        this.sendStatus(res, StatusCodes.UNAUTHORIZED, "No user information found");
+        return;
+      }
+
+      // Fetch full user data from database
+      const userData = await UserModel.read(user.userId);
+      if (!userData) {
+        this.sendStatus(res, StatusCodes.NOT_FOUND, "User not found");
+        return;
+      }
+      
+      // Remove password from response
+      const { password: _, ...userWithoutPassword } = userData;
+      this.renderWithViews(res, 'read', userWithoutPassword);
+    } catch (error) {
+      this.sendStatus(res, StatusCodes.INTERNAL_SERVER_ERROR, error);
     }
   }
 }

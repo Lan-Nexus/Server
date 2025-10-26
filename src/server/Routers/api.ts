@@ -164,6 +164,7 @@ new Router<UsersController>({
   prefix: "/users",
 })
   .get({ handler: "list", permission: "users:list" })
+  .get({ path: "/me", handler: "me" })
   .get({
     path: "/by-client-id/:clientId",
     handler: "findByClientId",
@@ -187,7 +188,22 @@ new Router<UsersController>({
     handler: "updateByClientIdOnly",
     permission: ["users:update","users:update:by-client-id"],
   })
-  .delete({ path: "/:id", handler: "delete", permission: "users:delete" });
+  .delete({ path: "/:id", handler: "delete", permission: "users:delete" })
+  .post({
+    path: "/:id/password",
+    handler: "setPassword",
+    permission: "users:password:set",
+  })
+  .post({
+    path: "/by-client-id/:clientId/password",
+    handler: "setPasswordByClientId",
+    permission: ["users:password:set","users:password:set:by-client-id"],
+  })
+  .post({
+    path: "/authenticate",
+    handler: "authenticate",
+    permission: "users:authenticate",
+  });
 
 new Router<gameEventsController>({
   router: router,
