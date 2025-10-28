@@ -17,6 +17,17 @@ export default class UsersController extends PageController {
     if (body.id) {
       body.id = Number(body.id);
     }
+    
+    // Handle avatar data - if it's already an object, keep it as is
+    // The User model will handle JSON serialization
+    if (body.avatar && typeof body.avatar === 'string') {
+      try {
+        body.avatar = JSON.parse(body.avatar);
+      } catch (e) {
+        // If parsing fails, leave as string and let validation handle it
+      }
+    }
+    
     return body;
   }
 

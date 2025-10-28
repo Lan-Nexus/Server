@@ -1,302 +1,186 @@
 <template>
-  <div class="avatar-container">
-    <div 
+  <div class="user-avatar" :class="sizeClass">
+    <img
+      v-if="avatarUrl"
+      :src="avatarUrl"
+      :alt="`Avatar for ${name || 'user'}`"
       :class="[
-        'avatar-wrapper',
-        sizeClass,
-        { 'avatar-hover': hover }
+        'rounded-full object-cover transition-transform',
+        { 'hover:scale-105': hover }
+      ]"
+      @error="onImageError"
+    />
+    <div
+      v-else
+      :class="[
+        'rounded-full bg-gray-300 flex items-center justify-center text-white font-bold',
+        sizeClass
       ]"
     >
-      <!-- User Icon SVG -->
-      <div 
-        v-if="!showInitials"
-        class="avatar-icon"
-        :style="{ backgroundColor: backgroundColor }"
-      >
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          class="user-icon"
-        >
-          <path
-            d="M12 12C14.7614 12 17 9.76142 17 7C17 4.23858 14.7614 2 12 2C9.23858 2 7 4.23858 7 7C7 9.76142 9.23858 12 12 12Z"
-            :fill="iconColor"
-          />
-          <path
-            d="M12 14C7.29 14 3.5 17.79 3.5 22.5C3.5 22.78 3.72 23 4 23H20C20.28 23 20.5 22.78 20.5 22.5C20.5 17.79 16.71 14 12 14Z"
-            :fill="iconColor"
-          />
-        </svg>
-      </div>
-      
-      <!-- Initials Fallback -->
-      <div 
-        v-else
-        class="avatar-initials"
-        :style="{ 
-          backgroundColor: backgroundColor,
-          color: iconColor 
-        }"
-      >
-        <span class="initials-text">{{ getInitials() }}</span>
-      </div>
-      
-      <!-- Status Indicator -->
-      <div 
-        v-if="status"
-        :class="[
-          'status-indicator',
-          `status-${status}`
-        ]"
-      ></div>
+      {{ initials }}
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
+import { createAvatar } from '@dicebear/core'
+import { adventurer } from '@dicebear/collection'
+
+interface AvatarData {
+  eyes?: string
+  eyebrows?: string
+  mouth?: string
+  glasses?: string
+  earrings?: string
+  hair?: string
+  hairColor?: string
+  skinColor?: string
+  backgroundColor?: string
+  clothingColor?: string
+  eyesColor?: string
+  facialHair?: string
+  facialHairColor?: string
+  accessories?: string
+  accessoriesColor?: string
+}
 
 interface Props {
   name?: string
-  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'
-  showInitials?: boolean
-  status?: 'online' | 'offline' | 'away' | 'busy'
-  color?: string
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | number
   hover?: boolean
+  avatar?: AvatarData | string
+  seed?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  name: 'User',
+  name: '',
   size: 'md',
-  showInitials: false,
-  hover: true
+  hover: false,
+  seed: ''
 })
 
-// Size classes
+const imageError = ref(false)
+
 const sizeClass = computed(() => {
-  const sizes = {
-    xs: 'size-xs',
-    sm: 'size-sm', 
-    md: 'size-md',
-    lg: 'size-lg',
-    xl: 'size-xl'
+  if (typeof props.size === 'number') {
+    return ''
   }
-  return sizes[props.size]
+  
+  const sizeMap = {
+    xs: 'w-6 h-6 text-xs',
+    sm: 'w-8 h-8 text-sm',
+    md: 'w-12 h-12 text-base',
+    lg: 'w-16 h-16 text-lg',
+    xl: 'w-20 h-20 text-xl'
+  }
+  
+  return sizeMap[props.size] || sizeMap.md
 })
 
-// Generate consistent color based on name
-const backgroundColor = computed(() => {
-  if (props.color) return props.color
+const pixelSize = computed(() => {
+  if (typeof props.size === 'number') {
+    return props.size
+  }
   
-  const colors = [
-    'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-    'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-    'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
-    'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
-    'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)',
-    'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)',
-    'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)',
-    'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)',
-    'linear-gradient(135deg, #fad0c4 0%, #ffd1ff 100%)'
-  ]
+  const sizeMap = {
+    xs: 24,
+    sm: 32,
+    md: 48,
+    lg: 64,
+    xl: 80
+  }
   
-  const hash = props.name.split('').reduce((a, b) => {
-    a = ((a << 5) - a) + b.charCodeAt(0)
-    return a & a
-  }, 0)
-  
-  return colors[Math.abs(hash) % colors.length]
+  return sizeMap[props.size] || sizeMap.md
 })
 
-const iconColor = computed(() => {
-  return 'rgba(255, 255, 255, 0.9)'
-})
-
-function getInitials(): string {
+const initials = computed(() => {
+  if (!props.name) return '??'
+  
   return props.name
     .split(' ')
-    .map(n => n[0])
+    .map(word => word.charAt(0))
     .join('')
     .substring(0, 2)
     .toUpperCase()
+})
+
+const avatarUrl = computed(() => {
+  if (imageError.value) return null
+  
+  try {
+    // If avatar is a string (URL), return it directly
+    if (typeof props.avatar === 'string') {
+      return props.avatar
+    }
+    
+    // If avatar is an object, use it to configure the adventurer avatar
+    if (props.avatar && typeof props.avatar === 'object') {
+      const avatarConfig: any = {
+        seed: props.seed || props.name || 'default',
+        size: pixelSize.value
+      }
+      
+      // Map avatar properties to adventurer options
+      if (props.avatar.eyes) avatarConfig.eyes = [props.avatar.eyes]
+      if (props.avatar.eyebrows) avatarConfig.eyebrows = [props.avatar.eyebrows]
+      if (props.avatar.mouth) avatarConfig.mouth = [props.avatar.mouth]
+      if (props.avatar.hair) avatarConfig.hair = [props.avatar.hair]
+      if (props.avatar.hairColor) avatarConfig.hairColor = [props.avatar.hairColor]
+      if (props.avatar.skinColor) avatarConfig.skinColor = [props.avatar.skinColor]
+      if (props.avatar.backgroundColor) avatarConfig.backgroundColor = [props.avatar.backgroundColor]
+      if (props.avatar.clothingColor) avatarConfig.clothingColor = [props.avatar.clothingColor]
+      if (props.avatar.eyesColor) avatarConfig.eyesColor = [props.avatar.eyesColor]
+      if (props.avatar.facialHair) avatarConfig.facialHair = [props.avatar.facialHair]
+      if (props.avatar.facialHairColor) avatarConfig.facialHairColor = [props.avatar.facialHairColor]
+      if (props.avatar.accessories) avatarConfig.accessories = [props.avatar.accessories]
+      if (props.avatar.accessoriesColor) avatarConfig.accessoriesColor = [props.avatar.accessoriesColor]
+      
+      // Handle glasses and earrings as accessories
+      if (props.avatar.glasses) {
+        avatarConfig.accessories = avatarConfig.accessories || []
+        avatarConfig.accessories.push(props.avatar.glasses)
+      }
+      if (props.avatar.earrings) {
+        avatarConfig.accessories = avatarConfig.accessories || []
+        avatarConfig.accessories.push(props.avatar.earrings)
+      }
+      
+      const avatar = createAvatar(adventurer, avatarConfig)
+      return avatar.toDataUri()
+    }
+    
+    // Fallback: generate avatar from name/seed
+    if (props.name || props.seed) {
+      const avatar = createAvatar(adventurer, {
+        seed: props.seed || props.name || 'default',
+        size: pixelSize.value
+      })
+      return avatar.toDataUri()
+    }
+    
+    return null
+  } catch (error) {
+    console.error('Error generating avatar:', error)
+    return null
+  }
+})
+
+const onImageError = () => {
+  imageError.value = true
 }
 </script>
 
 <style scoped>
-.avatar-container {
-  position: relative;
-  display: inline-block;
-}
-
-.avatar-wrapper {
-  position: relative;
-  border-radius: 50%;
-  overflow: hidden;
-  border: 3px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 
-    0 4px 8px rgba(0, 0, 0, 0.1),
-    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  backdrop-filter: blur(10px);
-}
-
-.avatar-hover:hover {
-  transform: scale(1.05);
-  box-shadow: 
-    0 8px 25px rgba(0, 0, 0, 0.15),
-    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
-  border-color: rgba(255, 255, 255, 0.3);
-}
-
-.avatar-icon,
-.avatar-initials {
+.user-avatar img,
+.user-avatar > div {
   width: 100%;
   height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--bg-gradient);
 }
 
-.avatar-icon {
-  background: v-bind(backgroundColor);
-  padding: 20%;
-}
-
-.avatar-initials {
-  background: v-bind(backgroundColor);
-}
-
-.user-icon {
-  width: 100%;
-  height: 100%;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
-}
-
-.initials-text {
-  font-weight: 700;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-  letter-spacing: 0.05em;
-}
-
-.status-indicator {
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  border-radius: 50%;
-  border: 2px solid white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-/* Size variants */
-.size-xs {
-  width: 24px;
-  height: 24px;
-}
-
-.size-xs .initials-text {
-  font-size: 10px;
-}
-
-.size-xs .status-indicator {
-  width: 6px;
-  height: 6px;
-  border-width: 1px;
-}
-
-.size-sm {
-  width: 32px;
-  height: 32px;
-}
-
-.size-sm .initials-text {
-  font-size: 12px;
-}
-
-.size-sm .status-indicator {
-  width: 8px;
-  height: 8px;
-}
-
-.size-md {
-  width: 48px;
-  height: 48px;
-}
-
-.size-md .initials-text {
-  font-size: 16px;
-}
-
-.size-md .status-indicator {
-  width: 12px;
-  height: 12px;
-}
-
-.size-lg {
-  width: 64px;
-  height: 64px;
-}
-
-.size-lg .initials-text {
-  font-size: 20px;
-}
-
-.size-lg .status-indicator {
-  width: 16px;
-  height: 16px;
-}
-
-.size-xl {
-  width: 80px;
-  height: 80px;
-}
-
-.size-xl .initials-text {
-  font-size: 24px;
-}
-
-.size-xl .status-indicator {
-  width: 20px;
-  height: 20px;
-}
-
-/* Status colors */
-.status-online {
-  background-color: #10b981;
-}
-
-.status-offline {
-  background-color: #6b7280;
-}
-
-.status-away {
-  background-color: #f59e0b;
-}
-
-.status-busy {
-  background-color: #ef4444;
-}
-
-/* Dark mode adjustments */
-@media (prefers-color-scheme: dark) {
-  .avatar-wrapper {
-    border-color: rgba(255, 255, 255, 0.1);
-    box-shadow: 
-      0 4px 8px rgba(0, 0, 0, 0.3),
-      0 0 0 1px rgba(255, 255, 255, 0.03) inset;
-  }
-  
-  .avatar-hover:hover {
-    border-color: rgba(255, 255, 255, 0.2);
-    box-shadow: 
-      0 8px 25px rgba(0, 0, 0, 0.4),
-      0 0 0 1px rgba(255, 255, 255, 0.05) inset;
-  }
-  
-  .status-indicator {
-    border-color: #1f2937;
-  }
+.user-avatar[style*="width"] img,
+.user-avatar[style*="width"] > div {
+  width: var(--size);
+  height: var(--size);
 }
 </style>

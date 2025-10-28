@@ -9,11 +9,27 @@ import {
   createInsertSchema,
   createUpdateSchema,
 } from 'drizzle-zod';
+import { z } from 'zod';
+
+// Avatar type definition
+export const avatarSchema = z.object({
+  eyes: z.string(),
+  eyebrows: z.string(),
+  mouth: z.string(),
+  glasses: z.string().optional(),
+  earrings: z.string().optional(),
+  hair: z.string(),
+  hairColor: z.string(),
+  skinColor: z.string(),
+}).passthrough(); // Allow additional properties
+
+export type Avatar = z.infer<typeof avatarSchema>;
 
 export const usersTable = mysqlTable('users_table', {
   id: serial().primaryKey(),
   name: varchar({ length: 255 }).notNull(),
   clientId: varchar('client_id', { length: 255 }).notNull(),
+  avatar: text('avatar'), // JSON string containing avatar configuration
 });
 
 export const gamesTable = mysqlTable("games", {
@@ -102,9 +118,37 @@ export const usersSelectSchema = createSelectSchema(usersTable);
 export const usersInsertSchema = createInsertSchema(usersTable, {
   name: usersSelectSchema.shape.name,
   clientId: usersSelectSchema.shape.clientId,
+  avatar: z.union([
+    z.string().transform((str, ctx) => {
+      if (!str) return null;
+      try {
+        const parsed = JSON.parse(str);
+        return avatarSchema.parse(parsed);
+      } catch (e) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Invalid avatar JSON" });
+        return z.NEVER;
+      }
+    }),
+    avatarSchema,
+    z.null()
+  ]).optional(),
 });
 export const usersUpdateSchema = createUpdateSchema(usersTable, {
   ...usersSelectSchema.shape,
   name: usersSelectSchema.shape.name.optional(),
   clientId: usersSelectSchema.shape.clientId.optional(),
+  avatar: z.union([
+    z.string().transform((str, ctx) => {
+      if (!str) return null;
+      try {
+        const parsed = JSON.parse(str);
+        return avatarSchema.parse(parsed);
+      } catch (e) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Invalid avatar JSON" });
+        return z.NEVER;
+      }
+    }),
+    avatarSchema,
+    z.null()
+  ]).optional(),
 });
