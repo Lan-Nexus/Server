@@ -1,15 +1,32 @@
 import axios from 'axios';
 import router from '../router';
 
-// Optionally, get token from localStorage or a Pinia store
+// Function to get auth token with expiration check
 function getAuthToken() {
-  return localStorage.getItem('token');
+  const token = localStorage.getItem('token');
+  const expires = localStorage.getItem('token_expires');
+  
+  if (!token || !expires) {
+    return null;
+  }
+  
+  // Check if token is expired
+  const expiresDate = new Date(expires);
+  if (new Date() >= expiresDate) {
+    // Token is expired, clear it
+    localStorage.removeItem('token');
+    localStorage.removeItem('token_expires');
+    localStorage.removeItem('token_role');
+    localStorage.removeItem('user_data');
+    return null;
+  }
+  
+  return token;
 }
 
 const api = axios.create({
   baseURL: '/',
 });
-
 
 api.interceptors.request.use((config) => {
   const token = getAuthToken();
@@ -25,9 +42,15 @@ api.interceptors.response.use(
     error => {
         if (
             error.response &&
-            error.response.status === 403 &&
+            (error.response.status === 401 || error.response.status === 403) &&
             router.currentRoute.value.path !== '/login'
         ) {
+            // Clear expired/invalid auth data
+            localStorage.removeItem('token');
+            localStorage.removeItem('token_expires');
+            localStorage.removeItem('token_role');
+            localStorage.removeItem('user_data');
+            
             const currentPath = router.currentRoute.value.fullPath;
             router.push({ path: '/login', query: { redirect: currentPath } });
         }

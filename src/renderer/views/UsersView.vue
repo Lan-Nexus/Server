@@ -226,12 +226,8 @@ function closeEditModal() {
   editingUser.value = null;
 }
 
-// Check authentication on mount
+// Load users on mount
 onMounted(() => {
-  const token = localStorage.getItem('token');
-  if (!token) {
-    router.push('/login');
-    return;
-  }
+  // Router guard handles authentication, so we can safely load users
 });
 </script>

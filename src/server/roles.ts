@@ -4,8 +4,21 @@ const roles: Record<string, string[]> = {
     'games:read',
     'games:keys:release',
     'games:keys:reserve',
+    'users:read:by-client-id',
+    'users:update:by-client-id',
     'users:create',
     'users:update',
+    'users:read',
+  ],
+  user: [
+    'games:list',
+    'games:read',
+    'games:keys:release',
+    'games:keys:reserve',
+    'users:read:by-client-id',
+    'users:update:by-client-id',
+    'users:create',
+    'users:authenticate',
   ],
   admin: [
     'games:list',
@@ -37,12 +50,15 @@ const roles: Record<string, string[]> = {
     'users:delete',
     'users:create',
     'users:update',
+    'users:password:set',
+    'users:password:set:by-client-id',
+    'users:authenticate',
   ],
 }
 
 export default roles
 
-export function hasPermission(user: any, permission: string): boolean {
+export function hasPermission(user: any, permission: string | string[]): boolean {
   let rolePermissions: string[] | undefined;
 
   if (!user || !user.role) {
@@ -52,5 +68,27 @@ export function hasPermission(user: any, permission: string): boolean {
   }
 
   if (!rolePermissions) return false;
-  return rolePermissions.includes(permission);
+
+  // Handle single permission string
+  if (typeof permission === 'string') {
+    return rolePermissions.includes(permission);
+  }
+
+  // Handle array of permissions - user must have ALL permissions (AND logic)
+  return permission.every(perm => rolePermissions!.includes(perm));
+}
+
+export function hasAnyPermission(user: any, permissions: string[]): boolean {
+  let rolePermissions: string[] | undefined;
+
+  if (!user || !user.role) {
+    rolePermissions = roles.guest;
+  } else {
+    rolePermissions = roles[user.role];
+  }
+
+  if (!rolePermissions) return false;
+
+  // Handle array of permissions - user needs ANY permission (OR logic)
+  return permissions.some(perm => rolePermissions!.includes(perm));
 }

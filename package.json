@@ -18,7 +18,8 @@
     "migrate": "drizzle-kit migrate",
     "dev": "nodemon -w src/server -x tsx src/server/index.ts",
     "dev:info": "tsx src/server/info.ts",
-    "dev:renderer": "vite"
+    "dev:renderer": "vite",
+    "studio": "drizzle-kit studio "
   },
   "dependencies": {
     "@babel/runtime": "^7.27.6",

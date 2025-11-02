@@ -29,6 +29,8 @@ export const usersTable = mysqlTable('users_table', {
   id: serial().primaryKey(),
   name: varchar({ length: 255 }).notNull(),
   clientId: varchar('client_id', { length: 255 }).notNull(),
+  password: varchar('password', { length: 255 }),
+  role: varchar('role', { length: 100 }).notNull().default('user'),
   avatar: text('avatar'), // JSON string containing avatar configuration
 });
 
@@ -118,6 +120,8 @@ export const usersSelectSchema = createSelectSchema(usersTable);
 export const usersInsertSchema = createInsertSchema(usersTable, {
   name: usersSelectSchema.shape.name,
   clientId: usersSelectSchema.shape.clientId,
+  role: z.string().default('user').optional(),
+  password: z.string().min(6, "Password must be at least 6 characters").optional(),
   avatar: z.union([
     z.string().transform((str, ctx) => {
       if (!str) return null;
@@ -137,6 +141,8 @@ export const usersUpdateSchema = createUpdateSchema(usersTable, {
   ...usersSelectSchema.shape,
   name: usersSelectSchema.shape.name.optional(),
   clientId: usersSelectSchema.shape.clientId.optional(),
+  role: z.string().optional(),
+  password: z.string().min(6, "Password must be at least 6 characters").optional(),
   avatar: z.union([
     z.string().transform((str, ctx) => {
       if (!str) return null;

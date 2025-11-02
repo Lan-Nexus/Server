@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { RouterLink, RouterView } from "vue-router";
 import { useNotificationStore } from "@/stores/notification";
+import { useAuthStore } from "@/stores/auth";
+import UserAvatar from "@/components/common/UserAvatar.vue";
 import logo from "@/assets/logo.svg";
 import logoWhite from "@/assets/logo-white.svg";
 import { ref } from "vue";
 
 const notificationStore = useNotificationStore();
+const authStore = useAuthStore();
 
 const isHovered = ref(false);
 
@@ -208,6 +211,56 @@ function getNotificationBorderColor(type: string): string {
             </details>
           </li>
         </ul>
+      </div>
+
+      <!-- User Info & Logout -->
+      <div class="flex-none">
+        <div class="dropdown dropdown-end">
+          <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar">
+            <div class="w-10 h-10 rounded-full overflow-hidden">
+              <UserAvatar
+                :name="authStore.user?.name || 'User'"
+                size="md"
+                :hover="false"
+                :avatar="authStore.user?.avatar || undefined"
+              />
+            </div>
+          </div>
+          <ul tabindex="0" class="dropdown-content menu bg-base-100/95 backdrop-blur-sm border border-base-300/20 rounded-xl shadow-2xl w-64 p-2 mt-2">
+            <li class="menu-title px-4 py-2">
+              <span class="text-base-content/60">Signed in as</span>
+            </li>
+            <li class="px-4 py-3 border-b border-base-300/20 mb-2">
+              <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-full overflow-hidden">
+                  <UserAvatar
+                    :name="authStore.user?.name || 'User'"
+                    size="lg"
+                    :hover="false"
+                    :avatar="authStore.user?.avatar || undefined"
+                  />
+                </div>
+                <div class="flex flex-col gap-1">
+                  <span class="font-semibold">{{ authStore.user?.name }}</span>
+                  <span class="text-xs text-base-content/60 font-mono">{{ authStore.user?.clientId }}</span>
+                  <span class="badge badge-xs" :class="{
+                    'badge-primary': authStore.user?.role === 'admin',
+                    'badge-secondary': authStore.user?.role === 'user',
+                    'badge-neutral': authStore.user?.role === 'guest'
+                  }">{{ authStore.user?.role }}</span>
+                </div>
+              </div>
+            </li>
+            <li>
+              <button @click="authStore.logout" class="flex items-center gap-3 hover:bg-error/10 hover:text-error">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                <span>Sign Out</span>
+              </button>
+            </li>
+          </ul>
+        </div>
       </div>
     </nav>
 

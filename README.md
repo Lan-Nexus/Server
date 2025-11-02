@@ -101,7 +101,24 @@ npm run generate
 npm run migrate
 ```
 
-### 5. Development
+### 5. First Run Setup
+
+When you first access the application, you'll be guided through a one-time setup process to create your admin account:
+
+1. Navigate to `http://localhost:3000`
+2. You'll automatically be redirected to the setup page
+3. Fill in your admin user details:
+   - Full name
+   - Username (used for login)
+   - Secure password
+4. Click "Create Admin Account"
+5. You'll be automatically logged in and can start using the system
+
+> **Note**: The setup page is only accessible when no users exist in the system. Once an admin user is created, the setup process is disabled for security.
+
+For more details about the setup process, see [SETUP.md](./SETUP.md).
+
+### 6. Development
 
 For development with hot reload:
 
