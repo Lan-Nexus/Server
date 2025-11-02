@@ -18,7 +18,7 @@ export interface LoginCredentials {
 
 export const useAuthStore = defineStore('auth', () => {
   const router = useRouter()
-  
+
   // State
   const user = ref<AuthUser | null>(null)
   const token = ref<string | null>(null)
@@ -43,7 +43,7 @@ export const useAuthStore = defineStore('auth', () => {
 
     if (storedToken && storedExpires) {
       const expiresDate = new Date(storedExpires)
-      
+
       // Check if token is expired
       if (new Date() >= expiresDate) {
         clearAuth()
@@ -52,7 +52,7 @@ export const useAuthStore = defineStore('auth', () => {
 
       token.value = storedToken
       tokenExpires.value = storedExpires
-      
+
       // Try to restore user data
       if (storedUser) {
         try {
@@ -67,7 +67,7 @@ export const useAuthStore = defineStore('auth', () => {
         clearAuth()
         return false
       }
-      
+
       return true
     }
 
@@ -113,6 +113,35 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  // Set auth data (used after setup)
+  function setAuth(authToken: string, userData: AuthUser) {
+    token.value = authToken
+    user.value = userData
+
+    // Parse expires from token if available
+    try {
+      const tokenParts = authToken.split('.')
+      if (tokenParts.length === 3) {
+        const payload = JSON.parse(atob(tokenParts[1]))
+        if (payload.exp) {
+          const expires = new Date(payload.exp * 1000).toISOString()
+          tokenExpires.value = expires
+          localStorage.setItem('token_expires', expires)
+        }
+      }
+    } catch (e) {
+      // If we can't parse the token, set a default expiry
+      const expires = new Date(Date.now() + 60 * 60 * 1000).toISOString() // 1 hour
+      tokenExpires.value = expires
+      localStorage.setItem('token_expires', expires)
+    }
+
+    // Persist to localStorage
+    localStorage.setItem('token', authToken)
+    localStorage.setItem('token_role', userData.role)
+    localStorage.setItem('user_data', JSON.stringify(userData))
+  }
+
 
 
   // Logout
@@ -138,10 +167,10 @@ export const useAuthStore = defineStore('auth', () => {
   // Check if user has permission
   function hasPermission(permission: string): boolean {
     if (!user.value) return false
-    
+
     // Admin has all permissions
     if (user.value.role === 'admin') return true
-    
+
     // TODO: Implement proper permission checking based on role
     // For now, basic role-based permissions
     const userPermissions = {
@@ -149,7 +178,7 @@ export const useAuthStore = defineStore('auth', () => {
       user: ['users:read', 'users:update:own', 'games:read'],
       guest: ['games:read']
     }
-    
+
     const rolePermissions = userPermissions[user.value.role as keyof typeof userPermissions] || []
     return rolePermissions.includes('*') || rolePermissions.includes(permission)
   }
@@ -183,7 +212,7 @@ export const useAuthStore = defineStore('auth', () => {
     if (tokenExpires.value) {
       const expiresDate = new Date(tokenExpires.value)
       const fiveMinutesFromNow = new Date(Date.now() + 5 * 60 * 1000)
-      
+
       if (expiresDate <= fiveMinutesFromNow) {
         // Token is expiring soon, validate it
         return await validateToken()
@@ -205,17 +234,18 @@ export const useAuthStore = defineStore('auth', () => {
     tokenExpires,
     isLoading,
     error,
-    
+
     // Computed
     isAuthenticated,
     isAdmin,
     isTokenExpired,
-    
+
     // Actions
     initializeAuth,
     login,
     logout,
     clearAuth,
+    setAuth,
     hasPermission,
     validateToken,
     refreshTokenIfNeeded,
