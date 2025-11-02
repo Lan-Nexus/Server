@@ -1,17 +1,17 @@
-import express from "express";
-import { Request, Response } from "express";
-import gamesController from "../Controllers/api/GamesApiController.js";
-import gamesSearchController from "../Controllers/api/GameSearchApiController.js";
-import steamController from "../Controllers/api/SteamApiController.js";
-import GameKeyPageController from "../Controllers/api/GameKeyApiController.js";
-import gameEventsController from "../Controllers/api/GameEventsApiController.js";
-import UsersController from "../Controllers/api/UsersApiController.js";
-import Router from "./Router.js";
-import multer from "multer";
-import path from "path";
-import fs from "fs";
-import { jwtAuth } from "../jwt.js";
-import { hasPermission } from "../roles.js";
+import express from 'express';
+import { Request, Response } from 'express';
+import gamesController from '../Controllers/api/GamesApiController.js';
+import gamesSearchController from '../Controllers/api/GameSearchApiController.js';
+import steamController from '../Controllers/api/SteamApiController.js';
+import GameKeyPageController from '../Controllers/api/GameKeyApiController.js';
+import gameEventsController from '../Controllers/api/GameEventsApiController.js';
+import UsersController from '../Controllers/api/UsersApiController.js';
+import CalendarApiController from '../Controllers/api/CalendarApiController.js';
+import Router from './Router.js';
+import multer from 'multer';
+import path from 'path';
+import { jwtAuth } from '../jwt.js';
+import { hasPermission } from '../roles.js';
 
 // Simple rate limiting store
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
@@ -168,7 +168,7 @@ new Router<UsersController>({
   .get({
     path: "/by-client-id/:clientId",
     handler: "findByClientId",
-    permission: ["users:read","users:read:by-client-id"],
+    permission: ["users:read", "users:read:by-client-id"],
   })
   .get({ path: "/:id", handler: "read", permission: "users:read" })
   .post({ handler: "create", permission: "users:create" })
@@ -176,7 +176,7 @@ new Router<UsersController>({
   .put({
     path: "/by-client-id/:clientId",
     handler: "updateByClientId",
-    permission: ["users:update","users:read:by-client-id"],
+    permission: ["users:update", "users:read:by-client-id"],
   })
   .patch({
     path: "/client-id/:clientId",
@@ -186,7 +186,7 @@ new Router<UsersController>({
   .patch({
     path: "/update-by-client-id/:clientId",
     handler: "updateByClientIdOnly",
-    permission: ["users:update","users:update:by-client-id"],
+    permission: ["users:update", "users:update:by-client-id"],
   })
   .delete({ path: "/:id", handler: "delete", permission: "users:delete" })
   .post({
@@ -197,7 +197,7 @@ new Router<UsersController>({
   .post({
     path: "/by-client-id/:clientId/password",
     handler: "setPasswordByClientId",
-    permission: ["users:password:set","users:password:set:by-client-id"],
+    permission: ["users:password:set", "users:password:set:by-client-id"],
   })
   .post({
     path: "/authenticate",
@@ -227,6 +227,22 @@ new Router<gameEventsController>({
   })
   .delete({ path: "/:id", handler: "delete", permission: "events:delete" });
 
+// Calendar API endpoints
+const calendarControllerInstance = new CalendarApiController();
+
+// Authenticated calendar fetch endpoint - only requires authentication
+authenticatedRouter.post('/calendar/fetch', (req: any, res: any, next: any) => {
+  // Apply rate limiting
+  rateLimit(req, res, (err: any) => {
+    if (err) return next(err);
+
+    // Only check that user is authenticated, not specific permissions
+    // The calendar fetch is just a utility - actual event creation requires permissions
+    calendarControllerInstance.fetchFromUrl(req, res);
+  });
+});
+
+// Mount the authenticated router
 router.use(authenticatedRouter);
 
 export default router;

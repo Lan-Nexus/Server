@@ -16,20 +16,7 @@
         >
           <div class="flex items-center gap-3">
             <div class="p-2 bg-primary/10 rounded-lg">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-6 w-6 text-primary"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M12 4v16m8-8H4"
-                />
-              </svg>
+              <i class="fas fa-plus text-primary text-xl"></i>
             </div>
             <h3
               class="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent"
@@ -69,21 +56,8 @@
           class="flex justify-between items-center mb-6 pb-4 border-b border-base-300/20"
         >
           <div class="flex items-center gap-3">
-            <div class="p-2 bg-secondary/10 rounded-lg">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-6 w-6 text-secondary"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                />
-              </svg>
+            <div class="p-2 bg-primary/10 rounded-lg">
+              <i class="fas fa-edit text-primary text-xl"></i>
             </div>
             <h3
               class="text-xl font-bold bg-gradient-to-r from-secondary to-accent bg-clip-text text-transparent"
@@ -113,19 +87,7 @@
     <!-- Success Toast -->
     <div v-if="showSuccessToast" class="toast toast-top toast-end z-50">
       <div class="alert alert-success shadow-xl border border-success/20">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="stroke-current shrink-0 h-6 w-6"
-          fill="none"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
+        <i class="fas fa-check-circle text-success shrink-0 h-6 w-6"></i>
         <span class="font-medium">{{ successMessage }}</span>
       </div>
     </div>
@@ -133,19 +95,7 @@
     <!-- Error Toast -->
     <div v-if="showErrorToast" class="toast toast-top toast-end z-50">
       <div class="alert alert-error shadow-xl border border-error/20">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="stroke-current shrink-0 h-6 w-6"
-          fill="none"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
+        <i class="fas fa-exclamation-circle text-error shrink-0 h-6 w-6"></i>
         <span class="font-medium">{{ errorMessage }}</span>
       </div>
     </div>
@@ -158,11 +108,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
-import {
-  useUsersStore,
-  type CreateUserType,
-  type User,
-} from "@/stores/users";
+import { useUsersStore, type CreateUserType, type User } from "@/stores/users";
 import UserForm from "@/components/UserForm.vue";
 import UsersList from "@/components/UsersList.vue";
 
@@ -228,6 +174,10 @@ function closeEditModal() {
 
 // Load users on mount
 onMounted(() => {
-  // Router guard handles authentication, so we can safely load users
+  const token = localStorage.getItem("token");
+  if (!token) {
+    router.push("/login");
+    return;
+  }
 });
 </script>
