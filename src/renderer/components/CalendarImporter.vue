@@ -1,10 +1,10 @@
 <template>
   <div
-    class="card bg-base-100/50 backdrop-blur-sm border border-base-300/20 shadow-xl"
+    class="card bg-base-100/50 backdrop-blur-sm border border-base-300/20 shadow-xl min-h-[600px]"
   >
     <div class="card-body">
       <!-- Import View -->
-      <div v-if="!showEventsReview">
+      <div v-if="!showEventsReview" class="min-h-[500px]">
         <!-- Import Methods -->
         <div class="tabs tabs-boxed mb-6">
           <a
@@ -68,33 +68,86 @@
         </div>
 
         <!-- Text Paste Method -->
-        <div v-if="importMethod === 'text'" class="space-y-4">
+        <div v-if="importMethod === 'text'" class="space-y-6">
           <div class="form-control">
             <label class="label">
-              <span class="label-text font-semibold"
-                >Paste Calendar Content</span
-              >
+              <span class="label-text font-semibold flex items-center gap-2">
+                <i class="fas fa-paste text-primary"></i>
+                Paste Calendar Content
+              </span>
             </label>
-            <textarea
-              v-model="calendarText"
-              class="textarea textarea-bordered h-32 bg-base-100/80 focus:bg-base-100 transition-all duration-200"
-              placeholder="Paste your .ics calendar content here..."
-              :disabled="isProcessing"
-            ></textarea>
+            <div class="relative">
+              <textarea
+                v-model="calendarText"
+                class="textarea textarea-bordered w-full h-48 md:h-56 lg:h-64 bg-base-100/80 focus:bg-base-100 transition-all duration-200 resize-y min-h-32 font-mono text-sm leading-relaxed"
+                placeholder="Paste your .ics calendar content here...
+
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Example Corp//Example Calendar//EN
+BEGIN:VEVENT
+DTSTART:20241102T140000Z
+DTEND:20241102T160000Z
+SUMMARY:Gaming Session
+DESCRIPTION:Weekly gaming event
+END:VEVENT
+END:VCALENDAR"
+                :disabled="isProcessing"
+              ></textarea>
+              <!-- Character count indicator -->
+              <div
+                class="absolute bottom-2 right-2 text-xs text-base-content/50 bg-base-100/80 px-2 py-1 rounded backdrop-blur-sm"
+              >
+                {{ calendarText.length }} characters
+              </div>
+            </div>
             <div class="label">
-              <span class="label-text-alt text-base-content/60">
-                Paste the raw content of your .ics file
+              <span
+                class="label-text-alt text-base-content/60 flex items-center gap-2"
+              >
+                <i class="fas fa-info-circle"></i>
+                Paste the raw content of your .ics file. The textarea is
+                resizable for your convenience.
+              </span>
+              <span class="label-text-alt text-base-content/40">
+                <kbd class="kbd kbd-xs">Ctrl+V</kbd> to paste
               </span>
             </div>
           </div>
-          <button
-            @click="parseCalendarText"
-            class="btn btn-primary gap-2"
-            :disabled="!calendarText.trim() || isProcessing"
+
+          <!-- Action buttons -->
+          <div
+            class="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between"
           >
-            <i class="fas fa-cogs"></i>
-            Parse Calendar
-          </button>
+            <div class="flex items-center gap-2 text-sm text-base-content/60">
+              <i class="fas fa-lightbulb text-warning"></i>
+              <span
+                >Tip: Calendar content should start with "BEGIN:VCALENDAR"</span
+              >
+            </div>
+            <div class="flex gap-2">
+              <button
+                @click="calendarText = ''"
+                class="btn btn-ghost btn-sm gap-2"
+                :disabled="!calendarText.trim() || isProcessing"
+              >
+                <i class="fas fa-eraser"></i>
+                Clear
+              </button>
+              <button
+                @click="parseCalendarText"
+                class="btn btn-primary gap-2 min-w-32"
+                :disabled="!calendarText.trim() || isProcessing"
+              >
+                <span
+                  v-if="isProcessing"
+                  class="loading loading-spinner loading-sm"
+                ></span>
+                <i v-else class="fas fa-cogs"></i>
+                Parse Calendar
+              </button>
+            </div>
+          </div>
         </div>
 
         <!-- URL Import Method -->
