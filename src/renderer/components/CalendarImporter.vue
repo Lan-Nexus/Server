@@ -42,26 +42,11 @@
               v-model="selectedFile"
               accept=".ics,.ical,.ifb,.icalendar"
               @update:model-value="handleFileSelection"
+              :key="fileUploadKey"
             />
             <div class="label">
               <span class="label-text-alt text-base-content/60">
                 Supported formats: .ics, .ical, .ifb, .icalendar
-                <br />
-                <a
-                  href="/sample-gaming-events.ics"
-                  download
-                  class="link link-primary text-xs"
-                >
-                  📥 Download sample calendar file
-                </a>
-                <span class="mx-2">•</span>
-                <a
-                  href="/test-timezone-calendar.ics"
-                  download
-                  class="link link-accent text-xs"
-                >
-                  📥 Download timezone test file
-                </a>
               </span>
             </div>
           </div>
@@ -491,7 +476,7 @@ END:VCALENDAR"
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import { useGamesStore, type getGameType } from "@/stores/games";
 import { useEventsStore, type CreateEventType } from "@/stores/events";
 import FileUpload from "@/components/gameForm/FileUpload.vue";
@@ -508,6 +493,7 @@ interface ParsedEvent {
 
 const emit = defineEmits<{
   eventsImported: [count: number];
+  close: [];
 }>();
 
 const gamesStore = useGamesStore();
@@ -518,6 +504,7 @@ const calendarText = ref("");
 const calendarUrl = ref("");
 const defaultGameId = ref<number | "">("");
 const selectedFile = ref<File | null>(null);
+const fileUploadKey = ref(0);
 const showEventsReview = ref(false);
 
 const isProcessing = ref(false);
@@ -760,8 +747,27 @@ function clearParsedEvents() {
   parsedEvents.value = [];
   calendarText.value = "";
   calendarUrl.value = "";
+  selectedFile.value = null;
   error.value = "";
   showEventsReview.value = false;
+}
+
+function clearAllData() {
+  clearParsedEvents();
+  // Reset import method to default
+  importMethod.value = "file";
+  // Reset any processing states
+  isProcessing.value = false;
+  isImporting.value = false;
+  processingMessage.value = "";
+  // Force re-render of FileUpload component to clear the file input
+  fileUploadKey.value += 1;
+}
+
+// Function to be called when modal closes
+function handleModalClose() {
+  clearAllData();
+  emit("close");
 }
 
 async function importEvents() {
@@ -814,5 +820,14 @@ async function importEvents() {
 onMounted(async () => {
   await gamesStore.getGames();
   games.value = gamesStore.games;
+});
+
+onBeforeUnmount(() => {
+  clearAllData();
+});
+
+// Expose methods for parent component
+defineExpose({
+  clearAllData,
 });
 </script>

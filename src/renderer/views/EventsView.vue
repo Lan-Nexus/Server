@@ -131,7 +131,11 @@
             ✕
           </label>
         </div>
-        <CalendarImporter @events-imported="handleEventsImported" />
+        <CalendarImporter
+          ref="calendarImporterRef"
+          @events-imported="handleEventsImported"
+          @close="handleImportModalClose"
+        />
       </div>
       <label class="modal-backdrop" for="import-modal">Close</label>
     </div>
@@ -146,7 +150,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, watch } from "vue";
 import {
   useEventsStore,
   type CreateEventType,
@@ -162,6 +166,7 @@ const showCreateModal = ref(false);
 const showEditModal = ref(false);
 const showImportModal = ref(false);
 const editingEvent = ref<GameEvent | null>(null);
+const calendarImporterRef = ref();
 
 const showSuccessToast = ref(false);
 const showErrorToast = ref(false);
@@ -220,4 +225,22 @@ function handleEventsImported(count: number) {
   showImportModal.value = false;
   showToast(`Successfully imported ${count} events!`);
 }
+
+function handleImportModalClose() {
+  showImportModal.value = false;
+  // Clear the calendar importer data when modal closes
+  if (calendarImporterRef.value) {
+    calendarImporterRef.value.clearAllData();
+  }
+}
+
+// Watch for modal close and clear data
+watch(showImportModal, (newValue, oldValue) => {
+  // When modal closes (goes from true to false), clear the data
+  if (oldValue === true && newValue === false) {
+    if (calendarImporterRef.value) {
+      calendarImporterRef.value.clearAllData();
+    }
+  }
+});
 </script>
