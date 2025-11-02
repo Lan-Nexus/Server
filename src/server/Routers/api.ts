@@ -6,6 +6,7 @@ import steamController from '../Controllers/api/SteamApiController.js';
 import GameKeyPageController from '../Controllers/api/GameKeyApiController.js';
 import gameEventsController from '../Controllers/api/GameEventsApiController.js';
 import UsersController from '../Controllers/api/UsersApiController.js';
+import CalendarApiController from '../Controllers/api/CalendarApiController.js';
 import Router from './Router.js';
 import multer from 'multer';
 import path from 'path';
@@ -22,39 +23,39 @@ const RATE_LIMIT_MAX_REQUESTS = 10; // 10 requests per minute
 const rateLimit = (req: Request, res: Response, next: express.NextFunction) => {
   const clientIp = req.ip || req.connection.remoteAddress || 'unknown';
   const now = Date.now();
-  
+
   // Clean up expired entries
   for (const [ip, data] of rateLimitStore.entries()) {
     if (now > data.resetTime) {
       rateLimitStore.delete(ip);
     }
   }
-  
+
   // Get or create rate limit data for this IP
   let limitData = rateLimitStore.get(clientIp);
   if (!limitData || now > limitData.resetTime) {
     limitData = { count: 0, resetTime: now + RATE_LIMIT_WINDOW };
     rateLimitStore.set(clientIp, limitData);
   }
-  
+
   // Check if limit exceeded
   if (limitData.count >= RATE_LIMIT_MAX_REQUESTS) {
-    return res.status(429).json({ 
+    return res.status(429).json({
       error: 'Too many requests. Please try again later.',
       retryAfter: Math.ceil((limitData.resetTime - now) / 1000)
     });
   }
-  
+
   // Increment counter
   limitData.count++;
-  
+
   // Add rate limit headers
   res.set({
     'X-RateLimit-Limit': RATE_LIMIT_MAX_REQUESTS.toString(),
     'X-RateLimit-Remaining': (RATE_LIMIT_MAX_REQUESTS - limitData.count).toString(),
     'X-RateLimit-Reset': new Date(limitData.resetTime).toISOString()
   });
-  
+
   next();
 };
 
@@ -206,6 +207,21 @@ authenticatedRouter.put('/events/:id/status', (req: any, res: any) => {
     return res.status(403).json({ error: 'Forbidden' });
   }
   gameEventsControllerInstance.updateStatus(req, res);
+});
+
+// Calendar API endpoints
+const calendarControllerInstance = new CalendarApiController();
+
+// Authenticated calendar fetch endpoint - only requires authentication
+authenticatedRouter.post('/calendar/fetch', (req: any, res: any, next: any) => {
+  // Apply rate limiting
+  rateLimit(req, res, (err: any) => {
+    if (err) return next(err);
+
+    // Only check that user is authenticated, not specific permissions
+    // The calendar fetch is just a utility - actual event creation requires permissions
+    calendarControllerInstance.fetchFromUrl(req, res);
+  });
 });
 
 // Mount the authenticated router

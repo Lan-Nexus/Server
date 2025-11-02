@@ -33,20 +33,7 @@ async function handleAddGame(game: any) {
           @click="$router.go(-1)"
           class="btn btn-circle btn-ghost hover:btn-primary transition-all duration-200"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M10 19l-7-7m0 0l7-7m-7 7h18"
-            />
-          </svg>
+          <i class="fas fa-arrow-left"></i>
         </button>
         <div>
           <h1
@@ -67,20 +54,7 @@ async function handleAddGame(game: any) {
         <div class="card-body">
           <div class="flex items-center gap-3">
             <div class="p-2 bg-accent/10 rounded-lg">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-6 w-6 text-accent"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"
-                />
-              </svg>
+              <i class="fas fa-steam text-accent text-xl"></i>
             </div>
             <div>
               <h3 class="text-lg font-semibold">Import from Steam</h3>

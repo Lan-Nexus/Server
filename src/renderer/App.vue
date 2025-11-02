@@ -53,20 +53,7 @@ function getNotificationBorderColor(type: string): string {
               class="btn btn-ghost gap-2 hover:bg-info/10 hover:text-info transition-all duration-200"
               active-class="bg-info/20 text-info"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"
-                />
-              </svg>
+              <i class="fas fa-users"></i>
               <span class="hidden sm:inline">Users</span>
             </router-link>
           </li>
@@ -78,20 +65,7 @@ function getNotificationBorderColor(type: string): string {
               class="btn btn-ghost gap-2 hover:bg-secondary/10 hover:text-secondary transition-all duration-200"
               active-class="bg-secondary/20 text-secondary"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M8 7V3a1 1 0 011-1h6a1 1 0 011 1v4h3a2 2 0 012 2v1a1 1 0 01-1 1h-1v10a2 2 0 01-2 2H7a2 2 0 01-2-2V11H4a1 1 0 01-1-1V9a2 2 0 012-2h3z"
-                />
-              </svg>
+              <i class="fas fa-calendar-alt"></i>
               <span class="hidden sm:inline">Events</span>
             </router-link>
           </li>
@@ -102,20 +76,7 @@ function getNotificationBorderColor(type: string): string {
               <summary
                 class="btn btn-ghost gap-2 hover:bg-primary/10 hover:text-primary transition-all duration-200"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  class="h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M12 4v16m8-8H4"
-                  />
-                </svg>
+                <i class="fas fa-plus"></i>
                 <span class="hidden sm:inline">Create Game</span>
               </summary>
               <ul
@@ -127,20 +88,7 @@ function getNotificationBorderColor(type: string): string {
                     class="flex items-center gap-3 p-3 hover:bg-info/10 hover:text-info rounded-lg transition-all duration-200"
                   >
                     <div class="p-1 bg-info/10 rounded-lg">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        class="h-4 w-4 text-info"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                        />
-                      </svg>
+                      <i class="fas fa-search text-info"></i>
                     </div>
                     <div>
                       <div class="font-semibold">Find Game</div>
@@ -156,20 +104,7 @@ function getNotificationBorderColor(type: string): string {
                     class="flex items-center gap-3 p-3 hover:bg-accent/10 hover:text-accent rounded-lg transition-all duration-200"
                   >
                     <div class="p-1 bg-accent/10 rounded-lg">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        class="h-4 w-4 text-accent"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"
-                        />
-                      </svg>
+                      <i class="fab fa-steam text-accent"></i>
                     </div>
                     <div>
                       <div class="font-semibold">From Steam</div>
@@ -183,20 +118,7 @@ function getNotificationBorderColor(type: string): string {
                     class="flex items-center gap-3 p-3 hover:bg-success/10 hover:text-success rounded-lg transition-all duration-200"
                   >
                     <div class="p-1 bg-success/10 rounded-lg">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        class="h-4 w-4 text-success"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M12 4v16m8-8H4"
-                        />
-                      </svg>
+                      <i class="fas fa-plus text-success"></i>
                     </div>
                     <div>
                       <div class="font-semibold">Create New</div>
@@ -229,66 +151,19 @@ function getNotificationBorderColor(type: string): string {
           }"
         >
           <div class="flex items-center gap-2">
-            <svg
+            <i
               v-if="notificationStore.drawNotifications.type === 'success'"
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-6 w-6 shrink-0"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <svg
+              class="fas fa-check-circle text-success"
+            ></i>
+            <i
               v-else-if="notificationStore.drawNotifications.type === 'error'"
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-6 w-6 shrink-0"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <svg
+              class="fas fa-times-circle text-error"
+            ></i>
+            <i
               v-else-if="notificationStore.drawNotifications.type === 'warning'"
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-6 w-6 shrink-0"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
-              />
-            </svg>
-            <svg
-              v-else
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-6 w-6 shrink-0"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
+              class="fas fa-exclamation-triangle text-warning"
+            ></i>
+            <i v-else class="fas fa-info-circle text-info"></i>
             <span class="font-medium">{{
               notificationStore.drawNotifications.message
             }}</span>

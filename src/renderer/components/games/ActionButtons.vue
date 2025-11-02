@@ -47,13 +47,22 @@ function deleteGame() {
 
 <template>
   <template v-if="props.showView">
-    <button @click="handleView" class="btn m-1 btn-primary">View</button>
+    <button @click="handleView" class="btn m-1 btn-primary gap-2">
+      <i class="fas fa-eye"></i>
+      View
+    </button>
   </template>
   <template v-if="props.showEdit">
-    <button @click="handleEdit" class="btn m-1 btn-warning">Edit</button>
+    <button @click="handleEdit" class="btn m-1 btn-warning gap-2">
+      <i class="fas fa-edit"></i>
+      Edit
+    </button>
   </template>
   <template v-if="props.showDelete">
-    <button @click="handleDelete" class="btn m-1 btn-error">Delete</button>
+    <button @click="handleDelete" class="btn m-1 btn-error gap-2">
+      <i class="fas fa-trash"></i>
+      Delete
+    </button>
   </template>
 
   <ConfirmPopup

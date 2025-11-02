@@ -14,26 +14,22 @@
             {{ filteredEvents.length === 1 ? "event" : "events" }} found
           </p>
         </div>
-        <button
-          @click="$emit('create')"
-          class="btn btn-primary btn-lg gap-2 shadow-lg hover:shadow-xl transition-all duration-200"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+        <div class="flex gap-3">
+          <button
+            @click="$emit('import')"
+            class="btn btn-accent btn-lg gap-2 shadow-lg hover:shadow-xl transition-all duration-200"
           >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 4v16m8-8H4"
-            />
-          </svg>
-          Create New Event
-        </button>
+            <i class="fas fa-file-import"></i>
+            Import Calendar
+          </button>
+          <button
+            @click="$emit('create')"
+            class="btn btn-primary btn-lg gap-2 shadow-lg hover:shadow-xl transition-all duration-200"
+          >
+            <i class="fas fa-plus"></i>
+            Create New Event
+          </button>
+        </div>
       </div>
     </div>
 
@@ -44,20 +40,7 @@
       <div class="card-body">
         <h3 class="card-title text-xl mb-4">
           <div class="p-2 bg-info/10 rounded-lg">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-5 w-5 text-info"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.707A1 1 0 013 7V4z"
-              />
-            </svg>
+            <i class="fas fa-filter text-info"></i>
           </div>
           Filters & Search
         </h3>
@@ -65,20 +48,7 @@
           <div class="form-control">
             <label class="label">
               <span class="label-text font-semibold flex items-center gap-2">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  class="h-4 w-4 text-primary"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
+                <i class="fas fa-check-circle text-primary"></i>
                 Status
               </span>
             </label>
@@ -97,20 +67,7 @@
           <div class="form-control">
             <label class="label">
               <span class="label-text font-semibold flex items-center gap-2">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  class="h-4 w-4 text-secondary"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2h4a1 1 0 011 1v1a1 1 0 01-1 1h-1v10a2 2 0 01-2 2H6a2 2 0 01-2-2V7H3a1 1 0 01-1-1V5a1 1 0 011-1h4z"
-                  />
-                </svg>
+                <i class="fas fa-gamepad text-secondary"></i>
                 Game
               </span>
             </label>
@@ -132,20 +89,7 @@
           <div class="form-control">
             <label class="label">
               <span class="label-text font-semibold flex items-center gap-2">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  class="h-4 w-4 text-accent"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M13 10V3L4 14h7v7l9-11h-7z"
-                  />
-                </svg>
+                <i class="fas fa-bolt text-accent"></i>
                 Quick Actions
               </span>
             </label>
@@ -197,19 +141,7 @@
     >
       <div class="card-body">
         <div class="alert alert-error">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="stroke-current shrink-0 h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
+          <i class="fas fa-exclamation-circle"></i>
           <div>
             <h3 class="font-bold">Error Loading Events!</h3>
             <div class="text-sm opacity-80">{{ error }}</div>
@@ -227,45 +159,33 @@
         class="card-body flex flex-col items-center justify-center py-16 text-center"
       >
         <div class="max-w-md">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-24 w-24 text-base-content/30 mx-auto mb-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="1"
-              d="M8 7V3a1 1 0 011-1h6a1 1 0 011 1v4h3a2 2 0 012 2v1a1 1 0 01-1 1h-1v10a2 2 0 01-2 2H7a2 2 0 01-2-2V11H4a1 1 0 01-1-1V9a2 2 0 012-2h3z"
-            />
-          </svg>
+          <i
+            class="fas fa-calendar-times text-8xl text-base-content/30 mx-auto mb-4 block"
+          ></i>
           <h3 class="text-2xl font-bold mb-2">No Events Found</h3>
           <p class="text-base-content/60 mb-6">
             {{
               statusFilter || gameFilter
-                ? "Try adjusting your filters or create a new event."
-                : "Get started by creating your first gaming event!"
+                ? "Try adjusting your filters, import from a calendar, or create a new event."
+                : "Get started by creating your first gaming event or importing from a calendar!"
             }}
           </p>
-          <button @click="$emit('create')" class="btn btn-primary btn-lg gap-2">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-5 w-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+          <div class="flex gap-3 justify-center">
+            <button
+              @click="$emit('import')"
+              class="btn btn-accent btn-lg gap-2"
             >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 4v16m8-8H4"
-              />
-            </svg>
-            Create Your First Event
-          </button>
+              <i class="fas fa-file-import"></i>
+              Import Calendar
+            </button>
+            <button
+              @click="$emit('create')"
+              class="btn btn-primary btn-lg gap-2"
+            >
+              <i class="fas fa-plus"></i>
+              Create Your First Event
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -344,66 +264,19 @@
               >
                 <div class="flex items-center gap-1">
                   <!-- Status Icon -->
-                  <svg
+                  <i
                     v-if="getDisplayStatus(event) === 'active'"
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="h-3 w-3"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M5.636 18.364a9 9 0 010-12.728m12.728 0a9 9 0 010 12.728m-9.9-2.829a5 5 0 010-7.07m7.07 0a5 5 0 010 7.07M13 12a1 1 0 11-2 0 1 1 0 012 0z"
-                    />
-                  </svg>
-                  <svg
+                    class="fas fa-broadcast-tower"
+                  ></i>
+                  <i
                     v-else-if="getDisplayStatus(event) === 'upcoming'"
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="h-3 w-3"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                  <svg
+                    class="fas fa-clock"
+                  ></i>
+                  <i
                     v-else-if="getDisplayStatus(event) === 'completed'"
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="h-3 w-3"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                  <svg
-                    v-else
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="h-3 w-3"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
+                    class="fas fa-check-circle"
+                  ></i>
+                  <i v-else class="fas fa-times-circle"></i>
                   {{ getDisplayStatus(event) }}
                 </div>
               </div>
@@ -418,20 +291,7 @@
             >
               <div class="flex items-center gap-2 text-sm mb-3">
                 <div class="p-1 bg-primary/10 rounded-lg">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="h-4 w-4 text-primary"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
+                  <i class="fas fa-clock text-primary"></i>
                 </div>
                 <span class="font-semibold text-primary">Event Schedule</span>
               </div>
@@ -454,20 +314,7 @@
             <!-- Duration Badge -->
             <div class="flex justify-center">
               <div class="badge badge-secondary badge-lg gap-2 px-4 py-2">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  class="h-4 w-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M13 10V3L4 14h7v7l9-11h-7z"
-                  />
-                </svg>
+                <i class="fas fa-hourglass-half"></i>
                 Duration:
                 {{ calculateDuration(event.startTime, event.endTime) }}
               </div>
@@ -480,20 +327,7 @@
             >
               <div class="flex items-start gap-2">
                 <div class="p-1 bg-accent/10 rounded-lg mt-0.5">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="h-4 w-4 text-accent"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-1l-4 4z"
-                    />
-                  </svg>
+                  <i class="fas fa-file-alt text-secondary"></i>
                 </div>
                 <div class="text-sm leading-relaxed text-base-content/80">
                   {{ event.description }}
@@ -518,20 +352,7 @@
                 @click="updateStatus(event.id!, 'cancelled')"
                 class="btn btn-warning btn-sm gap-2 flex-1"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  class="h-4 w-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
+                <i class="fas fa-times"></i>
                 Cancel
               </button>
               <button
@@ -539,20 +360,7 @@
                 @click="updateStatus(event.id!, 'active')"
                 class="btn btn-success btn-sm gap-2 flex-1"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  class="h-4 w-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
+                <i class="fas fa-check"></i>
                 Activate
               </button>
             </div>
@@ -563,20 +371,7 @@
                 @click="$emit('edit', event)"
                 class="btn btn-primary btn-sm gap-2 flex-1"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  class="h-4 w-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                  />
-                </svg>
+                <i class="fas fa-edit"></i>
                 Edit
               </button>
             </div>
@@ -587,20 +382,7 @@
                 @click="confirmDelete(event)"
                 class="btn btn-error btn-sm gap-2"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  class="h-4 w-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                  />
-                </svg>
+                <i class="fas fa-trash"></i>
               </button>
             </div>
           </div>
@@ -615,20 +397,7 @@
         <div class="flex items-center gap-3 mb-4">
           <div class="avatar placeholder">
             <div class="bg-error text-error-content rounded-full w-12 h-12">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                />
-              </svg>
+              <i class="fas fa-trash text-xl"></i>
             </div>
           </div>
           <div>
@@ -676,20 +445,7 @@
 
           <div class="space-y-2 text-sm">
             <div class="flex items-center gap-2">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-4 w-4 text-primary"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
+              <i class="fas fa-clock text-primary"></i>
               <span>{{ formatDateTime(eventToDelete.startTime) }}</span>
             </div>
             <div
@@ -703,19 +459,7 @@
 
         <!-- Warning Message -->
         <div class="alert alert-warning mb-4">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="stroke-current shrink-0 h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
-            />
-          </svg>
+          <i class="fas fa-exclamation-triangle"></i>
           <span class="text-sm"
             >Are you sure you want to permanently delete this event?</span
           >
@@ -724,37 +468,11 @@
         <!-- Modal Actions -->
         <div class="modal-action gap-2">
           <button @click="eventToDelete = null" class="btn btn-ghost">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-4 w-4 mr-1"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
+            <i class="fas fa-times mr-1"></i>
             Cancel
           </button>
           <button @click="deleteEvent" class="btn btn-error">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-4 w-4 mr-1"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-              />
-            </svg>
+            <i class="fas fa-trash mr-1"></i>
             Delete Event
           </button>
         </div>
@@ -774,6 +492,7 @@ import {
 const emit = defineEmits<{
   create: [];
   edit: [event: GameEvent];
+  import: [];
 }>();
 
 const eventsStore = useEventsStore();

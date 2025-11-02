@@ -43,20 +43,7 @@ function createGame(game: postGameType) {
           @click="$router.go(-1)"
           class="btn btn-circle btn-ghost hover:btn-primary transition-all duration-200"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M10 19l-7-7m0 0l7-7m-7 7h18"
-            />
-          </svg>
+          <i class="fas fa-arrow-left"></i>
         </button>
         <div>
           <h1
@@ -81,20 +68,7 @@ function createGame(game: postGameType) {
           class="flex items-center gap-3 mb-6 pb-4 border-b border-base-300/20"
         >
           <div class="p-3 bg-primary/10 rounded-xl">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-6 w-6 text-primary"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 4v16m8-8H4"
-              />
-            </svg>
+            <i class="fas fa-plus text-primary text-xl"></i>
           </div>
           <div>
             <h3 class="text-xl font-semibold">Game Configuration</h3>
@@ -107,20 +81,7 @@ function createGame(game: postGameType) {
         <!-- Progress Bar -->
         <div class="mb-6" v-if="gamesStore.isProcessing">
           <div class="flex items-center gap-3 mb-2">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-5 w-5 text-primary animate-spin"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
+            <i class="fas fa-sync-alt text-primary animate-spin"></i>
             <span class="text-sm font-medium">Creating game...</span>
             <span
               class="text-xs text-base-content/60"

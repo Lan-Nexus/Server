@@ -50,20 +50,7 @@ function updateHandler(game: postGameType) {
           @click="$router.go(-1)"
           class="btn btn-circle btn-ghost hover:btn-primary transition-all duration-200"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M10 19l-7-7m0 0l7-7m-7 7h18"
-            />
-          </svg>
+          <i class="fas fa-arrow-left"></i>
         </button>
         <div>
           <h1
@@ -90,20 +77,7 @@ function updateHandler(game: postGameType) {
           </div>
           <span>{{ game.name }}</span>
         </div>
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="h-4 w-4"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M9 5l7 7-7 7"
-          />
-        </svg>
+        <i class="fas fa-chevron-right text-base-content/60"></i>
         <span>Edit</span>
       </div>
     </div>
@@ -114,20 +88,9 @@ function updateHandler(game: postGameType) {
       v-if="!game"
     >
       <div class="mb-8">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="h-24 w-24 text-error mx-auto mb-4"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="1"
-            d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0012 15c-2.837 0-5.374-1.175-7.2-3.062M6.343 6.343A8 8 0 1017.657 17.657 8 8 0 006.343 6.343z"
-          />
-        </svg>
+        <i
+          class="fas fa-exclamation-triangle text-8xl text-error mx-auto mb-4"
+        ></i>
         <h2 class="text-3xl font-bold text-error mb-2">Game Not Found</h2>
         <p class="text-base-content/60">
           Cannot find the game you're trying to edit.
@@ -135,37 +98,11 @@ function updateHandler(game: postGameType) {
       </div>
       <div class="flex gap-4">
         <button class="btn btn-primary" @click="$router.push({ name: 'home' })">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-5 w-5 mr-2"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-            />
-          </svg>
+          <i class="fas fa-home mr-2"></i>
           Go Home
         </button>
         <button class="btn btn-outline" @click="$router.go(-1)">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-5 w-5 mr-2"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M10 19l-7-7m0 0l7-7m-7 7h18"
-            />
-          </svg>
+          <i class="fas fa-arrow-left mr-2"></i>
           Go Back
         </button>
       </div>
@@ -182,20 +119,7 @@ function updateHandler(game: postGameType) {
           class="flex items-center gap-3 mb-6 pb-4 border-b border-base-300/20"
         >
           <div class="p-3 bg-primary/10 rounded-xl">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-6 w-6 text-primary"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-              />
-            </svg>
+            <i class="fas fa-edit text-primary"></i>
           </div>
           <div>
             <h3 class="text-xl font-semibold">Game Configuration</h3>
@@ -208,20 +132,7 @@ function updateHandler(game: postGameType) {
         <!-- Progress Bar -->
         <div class="mb-6" v-if="gamesStore.isProcessing">
           <div class="flex items-center gap-3 mb-2">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-5 w-5 text-primary animate-spin"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
+            <i class="fas fa-sync-alt text-primary animate-spin"></i>
             <span class="text-sm font-medium">Updating game...</span>
             <span
               class="text-xs text-base-content/60"
