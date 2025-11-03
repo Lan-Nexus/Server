@@ -40,20 +40,7 @@ const emit = defineEmits<{
       <!-- Status Badge -->
       <div class="absolute top-3 right-3">
         <div v-if="props.hasGame" class="badge badge-success gap-1 shadow-lg">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-3 w-3"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M5 13l4 4L19 7"
-            />
-          </svg>
+          <i class="fas fa-check text-xs"></i>
           Added
         </div>
         <div
@@ -95,20 +82,7 @@ const emit = defineEmits<{
           disabled
           class="btn btn-success btn-block gap-2"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-5 w-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M5 13l4 4L19 7"
-            />
-          </svg>
+          <i class="fas fa-check"></i>
           Already Added
         </button>
         <button
@@ -116,20 +90,7 @@ const emit = defineEmits<{
           @click="emit('handleAddGame')"
           class="btn btn-primary btn-block gap-2 hover:btn-accent transition-all duration-200"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-5 w-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 4v16m8-8H4"
-            />
-          </svg>
+          <i class="fas fa-plus"></i>
           Add Game
         </button>
       </div>

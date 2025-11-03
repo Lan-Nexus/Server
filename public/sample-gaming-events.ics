@@ -1,0 +1,56 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Gaming Events//Calendar Importer//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+BEGIN:VEVENT
+UID:gaming-tournament-001@gaming-events.local
+DTSTART:20241110T180000Z
+DTEND:20241110T220000Z
+SUMMARY:Weekly Gaming Tournament
+DESCRIPTION:Join us for our weekly gaming tournament featuring multiple games and competitions.
+LOCATION:Gaming Hall
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+END:VEVENT
+BEGIN:VEVENT
+UID:strategy-night-001@gaming-events.local
+DTSTART:20241115T190000Z
+DTEND:20241115T230000Z
+SUMMARY:Strategy Game Night
+DESCRIPTION:Evening dedicated to strategy games including board games and real-time strategy video games.
+LOCATION:Community Center
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+END:VEVENT
+BEGIN:VEVENT
+UID:esports-championship-001@gaming-events.local
+DTSTART:20241120T170000Z
+DTEND:20241121T020000Z
+SUMMARY:Esports Championship Finals
+DESCRIPTION:The grand finale of our esports championship series. Multiple games and prize pools.
+LOCATION:Esports Arena
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+END:VEVENT
+BEGIN:VEVENT
+UID:retro-gaming-day-001@gaming-events.local
+DTSTART:20241125T140000Z
+DTEND:20241125T220000Z
+SUMMARY:Retro Gaming Day
+DESCRIPTION:Celebrate classic games from the 80s and 90s. Bring your favorite retro consoles!
+LOCATION:Retro Gaming Lounge
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+END:VEVENT
+BEGIN:VEVENT
+UID:game-dev-workshop-001@gaming-events.local
+DTSTART:20241202T100000Z
+DTEND:20241202T170000Z
+SUMMARY:Game Development Workshop
+DESCRIPTION:Learn the basics of game development with hands-on tutorials and expert guidance.
+LOCATION:Tech Hub
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+END:VEVENT
+END:VCALENDAR

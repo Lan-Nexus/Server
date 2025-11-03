@@ -10,20 +10,7 @@
           @click="$router.go(-1)"
           class="btn btn-circle btn-ghost hover:btn-primary transition-all duration-200"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M10 19l-7-7m0 0l7-7m-7 7h18"
-            />
-          </svg>
+          <i class="fas fa-arrow-left"></i>
         </button>
         <div>
           <h1
@@ -45,20 +32,7 @@
       <div class="card-body">
         <div class="flex items-center gap-3 mb-6">
           <div class="p-2 bg-info/10 rounded-lg">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-6 w-6 text-info"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-              />
-            </svg>
+            <i class="fas fa-clipboard-list text-info text-xl"></i>
           </div>
           <div>
             <h3 class="text-xl font-semibold">Game Setup Progress</h3>
@@ -148,20 +122,7 @@
             class="btn btn-outline gap-2 btn-lg"
             :class="{ 'btn-disabled': currentStep === 0 }"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-5 w-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M10 19l-7-7m0 0l7-7m-7 7h18"
-              />
-            </svg>
+            <i class="fas fa-chevron-left"></i>
             Back
           </button>
 
@@ -179,36 +140,11 @@
             class="btn btn-primary gap-2 btn-lg shadow-lg"
           >
             {{ currentStep === steps.length - 1 ? "Finish" : "Next" }}
-            <svg
+            <i
               v-if="currentStep !== steps.length - 1"
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-5 w-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M9 5l7 7-7 7"
-              />
-            </svg>
-            <svg
-              v-else
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-5 w-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
+              class="fas fa-chevron-right"
+            ></i>
+            <i v-else class="fas fa-check"></i>
           </button>
         </div>
       </div>

@@ -4,20 +4,7 @@
     <div class="form-control">
       <label class="label">
         <span class="label-text font-semibold flex items-center gap-2">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-4 w-4 text-primary"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2h4a1 1 0 011 1v1a1 1 0 01-1 1h-1v10a2 2 0 01-2 2H6a2 2 0 01-2-2V7H3a1 1 0 01-1-1V5a1 1 0 011-1h4z"
-            />
-          </svg>
+          <i class="fas fa-calendar-alt text-primary"></i>
           Game *
         </span>
       </label>
@@ -26,7 +13,7 @@
         @change="updateGameName"
         class="select select-bordered w-full bg-base-100/80 focus:bg-base-100 transition-all duration-200"
         :class="{
-          'border-red-500': !form.gameId
+          'border-red-500': !form.gameId,
         }"
         required
       >
@@ -43,20 +30,7 @@
       <div class="form-control">
         <label class="label">
           <span class="label-text font-semibold flex items-center gap-2">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-4 w-4 text-success"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
+            <i class="fas fa-play-circle text-success"></i>
             Start Time *
           </span>
         </label>
@@ -65,7 +39,7 @@
           v-model="form.startTime"
           class="input input-bordered w-full bg-base-100/80 focus:bg-base-100 transition-all duration-200"
           :class="{
-            'border-red-500': !isDatesRight
+            'border-red-500': !isDatesRight,
           }"
           required
         />
@@ -75,20 +49,7 @@
       <div class="form-control">
         <label class="label">
           <span class="label-text font-semibold flex items-center gap-2">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-4 w-4 text-error"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
+            <i class="fas fa-stop-circle text-error"></i>
             End Time *
           </span>
         </label>
@@ -97,7 +58,7 @@
           v-model="form.endTime"
           class="input input-bordered w-full bg-base-100/80 focus:bg-base-100 transition-all duration-200"
           :class="{
-            'border-red-500': !isDatesRight
+            'border-red-500': !isDatesRight,
           }"
           required
         />
@@ -108,20 +69,7 @@
     <div class="form-control">
       <label class="label">
         <span class="label-text font-semibold flex items-center gap-2">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-4 w-4 text-warning"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
+          <i class="fas fa-check-circle text-warning"></i>
           Status
         </span>
       </label>
@@ -136,20 +84,7 @@
       </select>
       <div class="label">
         <span class="label-text-alt text-base-content/60">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-3 w-3 inline mr-1"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
+          <i class="fas fa-info-circle text-xs mr-1"></i>
           Status is automatically determined by start/end times unless cancelled
         </span>
       </div>
@@ -159,20 +94,7 @@
     <div class="form-control">
       <label class="label">
         <span class="label-text font-semibold flex items-center gap-2">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-4 w-4 text-accent"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-1l-4 4z"
-            />
-          </svg>
+          <i class="fas fa-comment-alt text-accent"></i>
           Description
         </span>
       </label>
@@ -181,7 +103,7 @@
         class="textarea textarea-bordered w-full h-24 bg-base-100/80 focus:bg-base-100 transition-all duration-200 resize-none"
         placeholder="Enter event description (optional)..."
         :class="{
-          'border-red-500': form.description == ''
+          'border-red-500': form.description == '',
         }"
       ></textarea>
     </div>
@@ -194,20 +116,7 @@
         class="btn btn-outline btn-lg gap-2 hover:btn-error transition-all duration-200"
         :disabled="isLoading"
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="h-5 w-5"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M6 18L18 6M6 6l12 12"
-          />
-        </svg>
+        <i class="fas fa-times"></i>
         Cancel
       </button>
       <button
@@ -215,25 +124,8 @@
         class="btn btn-primary btn-lg gap-2 min-w-32"
         :disabled="isLoading || !isFormValid"
       >
-        <span
-          v-if="isLoading"
-          class="loading loading-spinner loading-sm"
-        ></span>
-        <svg
-          v-else
-          xmlns="http://www.w3.org/2000/svg"
-          class="h-5 w-5"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M5 13l4 4L19 7"
-          />
-        </svg>
+        <i v-if="isLoading" class="fas fa-spinner fa-spin"></i>
+        <i v-else class="fas fa-check"></i>
         {{ submitText }}
       </button>
     </div>
@@ -274,9 +166,9 @@ const form = ref<CreateEventType>({
 
 const games = ref<getGameType[]>([]);
 
-const isDatesRight = computed(()=>{
-  return new Date(form.value.startTime) < new Date(form.value.endTime)
-})
+const isDatesRight = computed(() => {
+  return new Date(form.value.startTime) < new Date(form.value.endTime);
+});
 
 const isFormValid = computed(() => {
   const valid =
@@ -284,7 +176,7 @@ const isFormValid = computed(() => {
     form.value.gameName.trim() !== "" &&
     form.value.startTime !== "" &&
     form.value.endTime !== "" &&
-    isDatesRight.value
+    isDatesRight.value;
   return valid;
 });
 
