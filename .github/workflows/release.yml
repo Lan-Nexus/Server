@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - "v*.*.*" # Triggers on version tags like v1.0.0, v1.2.3, etc.
+  pull_request: # Triggers on pull requests
 
 permissions:
   contents: write
@@ -31,14 +32,18 @@ jobs:
         id: get_version
         run: |
           if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == refs/tags/* ]]; then
-          tagName="${{ github.ref_name }}"
-          version="${tagName#v}"
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "Extracted version: $version"
-            else
-          version="0.0.0-dev"
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "Using development version: $version"
+            tagName="${{ github.ref_name }}"
+            version="${tagName#v}"
+            echo "version=$version" >> "$GITHUB_OUTPUT"
+            echo "Extracted version: $version"
+          elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            version="0.0.0-pr-${{ github.event.pull_request.number }}"
+            echo "version=$version" >> "$GITHUB_OUTPUT"
+            echo "Using PR version: $version"
+          else
+            version="0.0.0-dev"
+            echo "version=$version" >> "$GITHUB_OUTPUT"
+            echo "Using development version: $version"
           fi
 
       - name: Update package.json version (temporary for build)
@@ -65,6 +70,7 @@ jobs:
           zip -r ../server-build.zip .
 
       - name: Upload release assets
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
           files: |
