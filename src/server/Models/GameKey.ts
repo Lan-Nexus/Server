@@ -1,13 +1,13 @@
-import Model from './Model.js';
-import { gameKeysTable } from '../db/schema.js';
-import { eq } from 'drizzle-orm';
-import { db } from '../db.js';
+import Model from "./Model.js";
+import { gameKeysTable } from "../db/schema.js";
+import { eq, and } from "drizzle-orm";
+import { db } from "../db.js";
 
 interface GameKey {
-    key: string;
-    gameId: number;
-    ipAddress: string;
-    clientId?: string;
+  key: string;
+  gameId: number;
+  ipAddress: string;
+  clientId?: string;
 }
 
 export default class GameKeyModel extends Model {
@@ -46,20 +46,22 @@ export default class GameKeyModel extends Model {
         return db.update(gameKeysTable).set({ ipAddress, clientId }).where(eq(gameKeysTable.id, id));
     }
     static async getNextAvailableKey(gameId: number) {
-        const keys = await db
-            .select()
-            .from(gameKeysTable)
-            .where(
-                (row) =>
-                    eq(row.gameId, gameId) && eq(row.ipAddress, '')
-            );
-        if (keys.length === 0) throw new Error('No available keys found');
-        return keys[0]; // Return the first available key
+      const keys = await db
+        .select()
+        .from(gameKeysTable)
+        .where(
+          and(
+            eq(gameKeysTable.gameId, gameId),
+            eq(gameKeysTable.ipAddress, "")
+          )
+        );
+      if (keys.length === 0) throw new Error("No available keys found");
+      return keys[0]; // Return the first available key
     }
     static async myKey(gameId: number, clientId: string) {
         const keys = await db.select().from(gameKeysTable).where(eq(gameKeysTable.clientId, clientId));
         const key = keys.find(k => k.gameId === gameId);
         return key || null;
     }
-    
+
 }
