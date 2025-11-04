@@ -9,6 +9,12 @@ const roles: Record<string, string[]> = {
     'users:create',
     'users:update',
     'users:read',
+    'game-sessions:start',
+    'game-sessions:stop',
+    'game-sessions:read',
+    'game-sessions:create',
+    'game-sessions:update',
+    'game-sessions:delete',
   ],
   user: [
     'games:list',
@@ -19,6 +25,12 @@ const roles: Record<string, string[]> = {
     'users:update:by-client-id',
     'users:create',
     'users:authenticate',
+    'game-sessions:start',
+    'game-sessions:stop',
+    'game-sessions:read',
+    'game-sessions:create',
+    'game-sessions:update',
+    'game-sessions:delete',
   ],
   admin: [
     'games:list',
@@ -53,6 +65,12 @@ const roles: Record<string, string[]> = {
     'users:password:set',
     'users:password:set:by-client-id',
     'users:authenticate',
+    'game-sessions:start',
+    'game-sessions:stop',
+    'game-sessions:read',
+    'game-sessions:create',
+    'game-sessions:update',
+    'game-sessions:delete',
   ],
 }
 

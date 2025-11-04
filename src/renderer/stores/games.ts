@@ -75,8 +75,8 @@ export const useGamesStore = defineStore('games', {
     },
     actions: {
         async getGames() {
-            const response = await api.get<{ data: getGameType[] }>('/api/games')
-            this.games = response.data.data
+            const response = await api.get('/api/games')
+            this.games = response.data.data || response.data || []
         },
 
         async deleteGame(gameId: number) {

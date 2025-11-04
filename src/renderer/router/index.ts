@@ -10,6 +10,8 @@ import FindGameView from '@/views/FindGameView.vue'
 import addGameView from '@/views/addGameView.vue'
 import EventsView from '@/views/EventsView.vue'
 import UsersView from '@/views/UsersView.vue'
+import GameSessionsView from '@/views/GameSessionsView.vue'
+import DashboardView from '@/views/DashboardView.vue'
 import { useAuthStore } from '@/stores/auth'
 
 
@@ -70,6 +72,16 @@ const router = createRouter({
       path: '/users',
       name: 'users',
       component: UsersView,
+    },
+    {
+      path: '/game-sessions',
+      name: 'gameSessions',
+      component: GameSessionsView,
+    },
+    {
+      path: '/dashboard',
+      name: 'dashboard',
+      component: DashboardView,
     },
   ],
 })

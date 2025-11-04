@@ -49,6 +49,30 @@ function getNotificationBorderColor(type: string): string {
 
       <div class="flex-none">
         <ul class="menu menu-horizontal px-1 gap-2">
+          <!-- Dashboard Link -->
+          <li>
+            <router-link
+              :to="{ name: 'dashboard' }"
+              class="btn btn-ghost gap-2 hover:bg-accent/10 hover:text-accent transition-all duration-200"
+              active-class="bg-accent/20 text-accent"
+            >
+              <i class="fas fa-tv"></i>
+              <span class="hidden sm:inline">Dashboard</span>
+            </router-link>
+          </li>
+
+          <!-- Game Sessions Link -->
+          <li>
+            <router-link
+              :to="{ name: 'gameSessions' }"
+              class="btn btn-ghost gap-2 hover:bg-warning/10 hover:text-warning transition-all duration-200"
+              active-class="bg-warning/20 text-warning"
+            >
+              <i class="fas fa-gamepad"></i>
+              <span class="hidden sm:inline">Sessions</span>
+            </router-link>
+          </li>
+
           <!-- Users Link -->
           <li>
             <router-link

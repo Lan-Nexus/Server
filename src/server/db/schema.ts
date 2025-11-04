@@ -75,6 +75,15 @@ export const gameEventsTable = mysqlTable("game_events", {
   description: text("description")
 });
 
+export const gameSessionsTable = mysqlTable("game_sessions", {
+  id: serial().primaryKey(),
+  clientId: varchar("client_id", { length: 255 }).notNull(),
+  gameId: int("game_id").notNull(), // Foreign key to gamesTable.id
+  startTime: datetime("start_time").notNull(),
+  endTime: datetime("end_time"),
+  isActive: int("is_active").notNull().default(1), // 1 = active session, 0 = ended session
+});
+
 
 export const gamesSelectSchema = createSelectSchema(gamesTable);
 export const gamesInsertSchema = createInsertSchema(gamesTable, {
@@ -157,4 +166,38 @@ export const usersUpdateSchema = createUpdateSchema(usersTable, {
     avatarSchema,
     z.null()
   ]).optional(),
+});
+
+export const gameSessionsSelectSchema = createSelectSchema(gameSessionsTable);
+export const gameSessionsInsertSchema = createInsertSchema(gameSessionsTable, {
+  clientId: z.string(),
+  gameId: z.number(),
+  startTime: z.string().transform((val) => new Date(val)),
+  endTime: z.union([
+    z.string().transform((val) => {
+      if (!val || val.trim() === '' || val === 'null' || val === 'undefined') {
+        return undefined;
+      }
+      return new Date(val);
+    }),
+    z.undefined(),
+    z.null()
+  ]).optional(),
+  isActive: z.number().optional(),
+});
+export const gameSessionsUpdateSchema = createUpdateSchema(gameSessionsTable, {
+  clientId: z.string().optional(),
+  gameId: z.number().optional(),
+  startTime: z.string().transform((val) => new Date(val)).optional(),
+  endTime: z.union([
+    z.string().transform((val) => {
+      if (!val || val.trim() === '' || val === 'null' || val === 'undefined') {
+        return undefined;
+      }
+      return new Date(val);
+    }),
+    z.undefined(),
+    z.null()
+  ]).optional(),
+  isActive: z.number().optional(),
 });
