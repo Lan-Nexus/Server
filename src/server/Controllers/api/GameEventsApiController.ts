@@ -116,8 +116,8 @@ export default class GameEventsController extends PageController {
             const id = parseInt(req.params.id);
             const { status } = req.body;
 
-            if (!['active', 'cancelled'].includes(status)) {
-                return res.status(400).json({ error: 'Invalid status. Only "active" and "cancelled" are allowed.' });
+            if (!['active', 'cancelled', 'upcoming', 'completed'].includes(status)) {
+                return res.status(400).json({ error: 'Invalid status. Only "active", "cancelled", "upcoming", and "completed" are allowed.' });
             }
 
             await GameEventModel.updateStatus(id, status);

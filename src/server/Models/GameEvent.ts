@@ -79,7 +79,7 @@ export default class GameEventModel extends Model {
             );
     }
 
-    static async listByStatus(status: 'active' | 'cancelled') {
+    static async listByStatus(status: 'active' | 'cancelled' | 'upcoming' | 'completed') {
         return db
             .select({
                 id: gameEventsTable.id,
@@ -106,7 +106,7 @@ export default class GameEventModel extends Model {
         await db.delete(gameEventsTable).where(eq(gameEventsTable.id, id));
     }
 
-    static async updateStatus(id: typeof gameEventsTable.$inferSelect.id, status: 'active' | 'cancelled') {
+    static async updateStatus(id: typeof gameEventsTable.$inferSelect.id, status: 'active' | 'cancelled' | 'upcoming' | 'completed') {
         return db.update(gameEventsTable).set({ status }).where(eq(gameEventsTable.id, id));
     }
 }

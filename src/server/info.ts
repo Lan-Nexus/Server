@@ -30,7 +30,7 @@ async function printRoutes() {
     router.routes.forEach((route) => {
       const permissions = router._permissions[route.name];
       const permText = permissions ? permissions : 'Public (no permission required)';
-      table.push([route.method.toUpperCase(), route.path, permText]);
+      table.push([route.method.toUpperCase(), route.path, String(permText)]);
     });
   });
 

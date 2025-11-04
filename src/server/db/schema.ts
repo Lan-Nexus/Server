@@ -45,7 +45,7 @@ export const gameKeysTable = mysqlTable("game_keys", {
   clientId: varchar("client_id", { length: 255 })
 });
 
-export const gameEventsStatus = ['active', 'cancelled'] as const;
+export const gameEventsStatus = ['active', 'cancelled', 'upcoming', 'completed'] as const;
 export const gameEventsStatusEnum = mysqlEnum('event_status', gameEventsStatus);
 
 export const gameEventsTable = mysqlTable("game_events", {
