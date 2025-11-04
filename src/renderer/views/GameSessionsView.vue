@@ -35,44 +35,7 @@
       </div>
     </div>
 
-    <!-- Stats Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-      <div class="stat bg-base-100/80 backdrop-blur-sm border border-base-300/20 rounded-xl shadow-sm">
-        <div class="stat-figure text-primary">
-          <i class="fas fa-play-circle text-3xl"></i>
-        </div>
-        <div class="stat-title">Active Sessions</div>
-        <div class="stat-value text-primary">{{ gameSessionsStore.activeSessionCount }}</div>
-        <div class="stat-desc">Currently playing</div>
-      </div>
-      
-      <div class="stat bg-base-100/80 backdrop-blur-sm border border-base-300/20 rounded-xl shadow-sm">
-        <div class="stat-figure text-secondary">
-          <i class="fas fa-history text-3xl"></i>
-        </div>
-        <div class="stat-title">Total Sessions</div>
-        <div class="stat-value text-secondary">{{ gameSessionsStore.sessionCount }}</div>
-        <div class="stat-desc">All time</div>
-      </div>
-      
-      <div class="stat bg-base-100/80 backdrop-blur-sm border border-base-300/20 rounded-xl shadow-sm">
-        <div class="stat-figure text-accent">
-          <i class="fas fa-users text-3xl"></i>
-        </div>
-        <div class="stat-title">Active Players</div>
-        <div class="stat-value text-accent">{{ uniqueActivePlayers }}</div>
-        <div class="stat-desc">Online now</div>
-      </div>
-      
-      <div class="stat bg-base-100/80 backdrop-blur-sm border border-base-300/20 rounded-xl shadow-sm">
-        <div class="stat-figure text-warning">
-          <i class="fas fa-clock text-3xl"></i>
-        </div>
-        <div class="stat-title">Avg Session</div>
-        <div class="stat-value text-warning text-2xl">{{ averageSessionTime }}</div>
-        <div class="stat-desc">Duration</div>
-      </div>
-    </div>
+
 
     <!-- Filter and Search -->
     <div class="bg-base-100/80 backdrop-blur-sm border border-base-300/20 rounded-xl p-6 mb-6">
@@ -80,7 +43,7 @@
         <div class="form-control">
           <input 
             type="text" 
-            placeholder="Search by Client ID..." 
+            placeholder="Search by username or client ID..." 
             class="input input-bordered w-64"
             v-model="searchQuery"
           />
@@ -140,10 +103,18 @@
           >
             <div class="flex items-center gap-4">
               <div class="w-3 h-3 bg-success rounded-full animate-pulse"></div>
-              <div>
-                <div class="font-medium">{{ session.clientId }}</div>
-                <div class="text-sm text-base-content/60">
-                  Game: {{ getGameName(session.gameId) }}
+              <div class="flex items-center gap-3">
+                <UserAvatar
+                  :name="getUserForSession(session)?.name || session.clientId"
+                  size="sm"
+                  :hover="false"
+                  :avatar="getUserForSession(session)?.avatar || undefined"
+                />
+                <div>
+                  <div class="font-medium">{{ getUserForSession(session)?.name || session.clientId }}</div>
+                  <div class="text-sm text-base-content/60">
+                    Game: {{ getGameName(session.gameId) }}
+                  </div>
                 </div>
               </div>
             </div>
@@ -189,7 +160,7 @@
         <table class="table table-zebra">
           <thead>
             <tr>
-              <th>Client ID</th>
+              <th>Player</th>
               <th>Game</th>
               <th>Start Time</th>
               <th>End Time</th>
@@ -201,7 +172,15 @@
           <tbody>
             <tr v-for="session in paginatedSessions" :key="session.id">
               <td>
-                <div class="font-medium">{{ session.clientId }}</div>
+                <div class="flex items-center gap-3">
+                  <UserAvatar
+                    :name="getUserForSession(session)?.name || session.clientId"
+                    size="xs"
+                    :hover="false"
+                    :avatar="getUserForSession(session)?.avatar || undefined"
+                  />
+                  <div class="font-medium">{{ getUserForSession(session)?.name || session.clientId }}</div>
+                </div>
               </td>
               <td>{{ getGameName(session.gameId) }}</td>
               <td>{{ formatTime(session.startTime) }}</td>
@@ -299,14 +278,51 @@
         <form @submit.prevent="handleCreateSession" class="space-y-4">
           <div class="form-control">
             <label class="label">
-              <span class="label-text">Client ID</span>
+              <span class="label-text">Player</span>
             </label>
-            <input 
-              type="text" 
-              v-model="newSession.clientId"
-              class="input input-bordered" 
-              required 
-            />
+            <div class="dropdown dropdown-bottom w-full">
+              <div tabindex="0" role="button" class="btn btn-outline w-full justify-start">
+                <div v-if="selectedUser" class="flex items-center gap-3">
+                  <UserAvatar
+                    :name="selectedUser.name"
+                    size="xs"
+                    :hover="false"
+                    :avatar="selectedUser.avatar || undefined"
+                  />
+                  <span>{{ selectedUser.name }}</span>
+                </div>
+                <span v-else class="text-base-content/60">Select a player</span>
+                <i class="fas fa-chevron-down ml-auto"></i>
+              </div>
+              <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-full max-h-60 overflow-y-auto">
+                <li class="p-2">
+                  <input 
+                    type="text" 
+                    v-model="userSearchQuery"
+                    placeholder="Search players..."
+                    class="input input-sm input-bordered w-full"
+                    @click.stop
+                  />
+                </li>
+                <li v-for="user in filteredUsers" :key="user.id">
+                  <a @click="selectUser(user)" class="flex items-center gap-3 p-3">
+                    <UserAvatar
+                      :name="user.name"
+                      size="xs"
+                      :hover="false"
+                      :avatar="user.avatar || undefined"
+                    />
+                    <div class="flex-1">
+                      <div class="font-medium">{{ user.name }}</div>
+                    </div>
+                    <div v-if="isUserCurrentlyPlaying(user.clientId)" class="badge badge-success badge-xs">
+                      <i class="fas fa-play text-xs mr-1"></i>
+                      Playing
+                    </div>
+                  </a>
+                </li>
+              </ul>
+            </div>
           </div>
           
           <div class="form-control">
@@ -454,9 +470,12 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useGameSessionsStore, type CreateGameSessionType, type GameSession } from '@/stores/gameSessions'
 import { useGamesStore } from '@/stores/games'
+import { useUsersStore } from '@/stores/users'
+import UserAvatar from '@/components/common/UserAvatar.vue'
 
 const gameSessionsStore = useGameSessionsStore()
 const gamesStore = useGamesStore()
+const usersStore = useUsersStore()
 
 // UI State
 const showCreateModal = ref(false)
@@ -476,9 +495,18 @@ const pageSize = ref(20)
 const newSession = ref<CreateGameSessionType>({
   clientId: '',
   gameId: 0,
-  startTime: '',
-  endTime: ''
+  startTime: new Date().toISOString().slice(0, 16), // Pre-fill with current date/time
+  endTime: '',
+  isActive: 1
 })
+
+// Selected user for dropdown
+const selectedUser = ref<any>(null)
+
+// User search
+const userSearchQuery = ref('')
+
+
 
 // Toast notifications
 const showSuccessToast = ref(false)
@@ -487,7 +515,7 @@ const successMessage = ref('')
 const errorMessage = ref('')
 
 // Auto-refresh interval
-let refreshInterval: NodeJS.Timeout | null = null
+let refreshInterval: number | null = null
 
 // Computed properties
 const uniqueActivePlayers = computed(() => {
@@ -511,9 +539,12 @@ const filteredSessions = computed(() => {
   let filtered = [...gameSessionsStore.sessions]
   
   if (searchQuery.value) {
-    filtered = filtered.filter(session => 
-      session.clientId.toLowerCase().includes(searchQuery.value.toLowerCase())
-    )
+    filtered = filtered.filter(session => {
+      const user = getUserForSession(session)
+      const searchTerm = searchQuery.value.toLowerCase()
+      return session.clientId.toLowerCase().includes(searchTerm) ||
+             (user?.name?.toLowerCase().includes(searchTerm) || false)
+    })
   }
   
   if (statusFilter.value === 'active') {
@@ -554,6 +585,39 @@ const paginatedSessions = computed(() => {
 })
 
 // Methods
+function getUserForSession(session: GameSession) {
+  return gameSessionsStore.getUserForSession(session)
+}
+
+function selectUser(user: any) {
+  selectedUser.value = user
+  newSession.value.clientId = user.clientId
+  userSearchQuery.value = '' // Clear search when user is selected
+  
+  // Close dropdown by removing focus
+  const dropdown = document.activeElement as HTMLElement
+  if (dropdown) {
+    dropdown.blur()
+  }
+}
+
+function isUserCurrentlyPlaying(clientId: string): boolean {
+  return gameSessionsStore.activeSessions.some(session => session.clientId === clientId)
+}
+
+// Computed property for filtered users based on search
+const filteredUsers = computed(() => {
+  if (!userSearchQuery.value.trim()) {
+    return usersStore.users
+  }
+  
+  const searchTerm = userSearchQuery.value.toLowerCase()
+  return usersStore.users.filter(user => 
+    user.name.toLowerCase().includes(searchTerm) ||
+    user.clientId.toLowerCase().includes(searchTerm)
+  )
+})
+
 function getGameName(gameId: number): string {
   if (!gamesStore.games || gamesStore.games.length === 0) {
     console.warn('⚠️ No games loaded in store')
@@ -612,6 +676,18 @@ async function deleteSession(sessionId: number) {
 
 async function handleCreateSession() {
   try {
+    // Validate that a user is selected
+    if (!selectedUser.value || !newSession.value.clientId) {
+      showToast('Please select a player', true)
+      return
+    }
+    
+    // Validate that a game is selected
+    if (!newSession.value.gameId) {
+      showToast('Please select a game', true)
+      return
+    }
+    
     const sessionData = { ...newSession.value }
     
     // Convert datetime-local values to ISO strings
@@ -635,16 +711,24 @@ function resetNewSession() {
   newSession.value = {
     clientId: '',
     gameId: 0,
-    startTime: '',
-    endTime: ''
+    startTime: new Date().toISOString().slice(0, 16), // Pre-fill with current date/time
+    endTime: '',
+    isActive: 1
   }
+  selectedUser.value = null
+  userSearchQuery.value = ''
 }
 
 async function refreshData() {
   try {
     console.log('🔄 Starting data refresh...')
     
-    // Fetch games first
+    // Fetch users first
+    console.log('👥 Fetching users...')
+    await usersStore.fetchUsers()
+    console.log('✅ Users loaded:', usersStore.users.length)
+    
+    // Fetch games
     console.log('📁 Fetching games...')
     await gamesStore.getGames()
     console.log('✅ Games loaded:', gamesStore.games.length)

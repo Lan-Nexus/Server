@@ -5,12 +5,27 @@ import { useAuthStore } from "@/stores/auth";
 import UserAvatar from "@/components/common/UserAvatar.vue";
 import logo from "@/assets/logo.svg";
 import logoWhite from "@/assets/logo-white.svg";
-import { ref } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
+import { useFullscreenStore } from "@/stores/fullscreen";
 
 const notificationStore = useNotificationStore();
 const authStore = useAuthStore();
+const fullscreenStore = useFullscreenStore();
 
 const isHovered = ref(false);
+
+// Initialize fullscreen listeners immediately and on mount
+fullscreenStore.initializeListeners();
+
+onMounted(() => {
+  // Double-check listeners are set up
+  fullscreenStore.initializeListeners();
+  console.log('App mounted, fullscreen listeners initialized');
+});
+
+onUnmounted(() => {
+  fullscreenStore.removeListeners();
+});
 
 // Function to get notification border colors
 function getNotificationBorderColor(type: string): string {
@@ -30,6 +45,7 @@ function getNotificationBorderColor(type: string): string {
   >
     <!-- Enhanced Navbar -->
     <nav
+      v-show="!fullscreenStore.isFullscreen"
       class="navbar sticky top-0 z-50 bg-base-100/95 backdrop-blur-md border-b border-base-300/20 shadow-lg"
     >
       <div class="flex-1">
@@ -157,6 +173,17 @@ function getNotificationBorderColor(type: string): string {
             </details>
           </li>
         </ul>
+      </div>
+
+      <!-- Fullscreen Button -->
+      <div class="flex-none mr-2">
+        <button 
+          @click="fullscreenStore.toggleFullscreen"
+          class="btn btn-ghost btn-circle text-lg hover:bg-primary/10 hover:text-primary transition-all duration-200"
+          :title="fullscreenStore.isFullscreen ? 'Exit Fullscreen (ESC)' : 'Enter Fullscreen'"
+        >
+          <i class="fas" :class="fullscreenStore.isFullscreen ? 'fa-compress' : 'fa-expand'"></i>
+        </button>
       </div>
 
       <!-- User Info & Logout -->

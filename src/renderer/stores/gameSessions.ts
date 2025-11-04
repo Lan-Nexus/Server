@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import api from '@/utls/api'
+import { useUsersStore, type User } from './users'
 
 export interface GameSession {
   id: number
@@ -10,6 +11,7 @@ export interface GameSession {
   endTime?: string
   isActive: number
   durationSeconds?: number
+  user?: User
 }
 
 export interface CreateGameSessionType {
@@ -26,6 +28,9 @@ export const useGameSessionsStore = defineStore('gameSessions', () => {
   const activeSessions = ref<GameSession[]>([])
   const isLoading = ref(false)
   const error = ref<string | null>(null)
+  
+  // Get users store for user data
+  const usersStore = useUsersStore()
 
   // Computed
   const sessionCount = computed(() => sessions.value.length)
@@ -60,7 +65,10 @@ export const useGameSessionsStore = defineStore('gameSessions', () => {
 
     try {
       const response = await api.get('/api/game-sessions')
-      sessions.value = response.data.sessions || []
+      const sessionsData = response.data.sessions || []
+      
+      // Enhance sessions with user data
+      sessions.value = await enhanceSessionsWithUserData(sessionsData)
     } catch (err: any) {
       error.value = err.response?.data?.error || 'Failed to fetch sessions'
       throw err
@@ -75,7 +83,10 @@ export const useGameSessionsStore = defineStore('gameSessions', () => {
 
     try {
       const response = await api.get('/api/game-sessions/active')
-      activeSessions.value = response.data.sessions || []
+      const sessionsData = response.data.sessions || []
+      
+      // Enhance sessions with user data
+      activeSessions.value = await enhanceSessionsWithUserData(sessionsData)
     } catch (err: any) {
       error.value = err.response?.data?.error || 'Failed to fetch active sessions'
       throw err
@@ -90,7 +101,10 @@ export const useGameSessionsStore = defineStore('gameSessions', () => {
 
     try {
       const response = await api.get(`/api/game-sessions/client/${clientId}`)
-      return response.data.sessions || []
+      const sessionsData = response.data.sessions || []
+      
+      // Enhance sessions with user data
+      return await enhanceSessionsWithUserData(sessionsData)
     } catch (err: any) {
       error.value = err.response?.data?.error || 'Failed to fetch client sessions'
       throw err
@@ -317,6 +331,32 @@ export const useGameSessionsStore = defineStore('gameSessions', () => {
     activeSessions.value = []
   }
 
+  // Helper function to enhance sessions with user data
+  async function enhanceSessionsWithUserData(sessionsData: GameSession[]): Promise<GameSession[]> {
+    // Ensure users are loaded
+    if (usersStore.users.length === 0) {
+      try {
+        await usersStore.fetchUsers()
+      } catch (error) {
+        console.warn('Failed to fetch users for session enhancement:', error)
+      }
+    }
+
+    // Enhance each session with user data
+    return sessionsData.map(session => {
+      const user = usersStore.users.find(u => u.clientId === session.clientId)
+      return {
+        ...session,
+        user: user || undefined
+      }
+    })
+  }
+
+  // Helper function to get user info for a session
+  function getUserForSession(session: GameSession): User | undefined {
+    return session.user || usersStore.users.find(u => u.clientId === session.clientId)
+  }
+
   return {
     // State
     sessions,
@@ -348,6 +388,8 @@ export const useGameSessionsStore = defineStore('gameSessions', () => {
     formatDuration,
     calculateSessionDuration,
     clearError,
-    clearSessions
+    clearSessions,
+    enhanceSessionsWithUserData,
+    getUserForSession
   }
 })
