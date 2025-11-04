@@ -42,6 +42,13 @@ const gamesStore = useGamesStore();
       </div>
     </td>
 
+    <!-- Game Type -->
+    <td class="py-4">
+      <div class="badge badge-info badge-sm">
+        {{ game.type }}
+      </div>
+    </td>
+
     <!-- Header Image -->
     <td class="py-4">
       <div class="relative overflow-hidden rounded-lg shadow-lg">

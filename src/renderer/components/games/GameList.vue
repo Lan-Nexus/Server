@@ -104,6 +104,12 @@ const gameCount = computed(() => gamesStore.games.length);
                 </th>
                 <th class="bg-transparent">
                   <div class="flex items-center gap-2">
+                    <i class="fas fa-tag text-info"></i>
+                    Type
+                  </div>
+                </th>
+                <th class="bg-transparent">
+                  <div class="flex items-center gap-2">
                     <i class="fas fa-images text-accent"></i>
                     Header Image
                   </div>
@@ -123,7 +129,7 @@ const gameCount = computed(() => gamesStore.games.length);
 
               <!-- Empty State -->
               <tr v-if="gameCount === 0">
-                <td colspan="4" class="text-center py-12">
+                <td colspan="5" class="text-center py-12">
                   <div
                     class="flex flex-col items-center gap-4 text-base-content/50"
                   >
