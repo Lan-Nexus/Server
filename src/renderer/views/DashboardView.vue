@@ -1,7 +1,14 @@
 <template>
   <div class="min-h-screen bg-gradient-to-br from-base-100 to-base-200 p-8 flex flex-col">
     <!-- Dashboard Header -->
-    <DashboardHeader :countdown="countdown" />
+    <DashboardHeader 
+      :countdown="countdown"
+      :is-web-socket-connected="isWebSocketConnected"
+      :is-web-socket-enabled="isWebSocketEnabled"
+      :is-refreshing="isLoading"
+      :on-toggle-web-socket="toggleWebSocket"
+      :on-manual-refresh="manualRefresh"
+    />
 
     <!-- Now and Next Header -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
@@ -39,6 +46,7 @@
         :get-user-for-session="getUserForSession"
         :get-game-name="getGameName"
         :format-session-duration="formatSessionDuration"
+        :is-web-socket-connected="isWebSocketConnected"
       />
 
       <!-- Popular Games Today -->
@@ -73,7 +81,12 @@
     </div>
 
     <!-- Connection Status -->
-    <ConnectionStatus :connection-status="connectionStatus" />
+    <ConnectionStatus 
+      :connection-status="connectionStatus" 
+      :is-web-socket-connected="isWebSocketConnected"
+      :show-web-socket-status="true"
+    />
+
   </div>
 </template>
 
@@ -93,6 +106,7 @@ import {
   UpcomingEventsCard,
   ConnectionStatus
 } from '@/components/dashboard'
+
 
 const gameSessionsStore = useGameSessionsStore()
 const gamesStore = useGamesStore()
@@ -116,6 +130,12 @@ const activePlayerCount = computed(() => {
   const uniquePlayers = new Set(activeSessions.value.map(s => s.clientId))
   return uniquePlayers.size
 })
+
+// WebSocket connection status
+const isWebSocketConnected = computed(() => gameSessionsStore.isConnected)
+const isWebSocketEnabled = computed(() => gameSessionsStore.isWebSocketEnabled)
+
+
 
 const activeGameCount = computed(() => {
   const uniqueGames = new Set(activeSessions.value.map(s => s.gameId))
@@ -439,8 +459,14 @@ async function refreshData() {
     await gameSessionsStore.fetchAllSessions()
     console.log('✅ All sessions loaded:', gameSessionsStore.sessions.length)
 
-    console.log('🟢 Fetching active sessions...')
-    await gameSessionsStore.fetchActiveSessions()
+    // For active sessions, use WebSocket-aware method
+    if (gameSessionsStore.isWebSocketEnabled && gameSessionsStore.isConnected) {
+      console.log('🟢 Using WebSocket for active sessions (real-time)')
+      await gameSessionsStore.refreshActiveSessions()
+    } else {
+      console.log('🟢 Fetching active sessions (fallback)...')
+      await gameSessionsStore.fetchActiveSessions()
+    }
     console.log('✅ Active sessions loaded:', gameSessionsStore.activeSessions.length)
 
     connectionStatus.value = 'connected'
@@ -458,16 +484,40 @@ async function refreshData() {
 }
 
 function startAutoRefresh() {
-  // Refresh data every 30 seconds
+  // If WebSocket is enabled and connected, reduce refresh frequency for non-realtime data
+  const refreshDelay = gameSessionsStore.isWebSocketEnabled && gameSessionsStore.isConnected ? 120000 : 30000 // 2 minutes vs 30 seconds
+  
+  // Refresh data at the determined interval
   refreshInterval = setInterval(async () => {
-    await refreshData()
-    countdown.value = 30 // Reset countdown
-  }, 30000)
+    // Only refresh non-realtime data if WebSocket is active
+    if (gameSessionsStore.isWebSocketEnabled && gameSessionsStore.isConnected) {
+      console.log('🔄 WebSocket active - refreshing non-realtime data only')
+      try {
+        isLoading.value = true
+        await usersStore.fetchUsers()
+        await gamesStore.getGames()
+        await eventsStore.fetchEvents()
+        await gameSessionsStore.fetchAllSessions() // Full session history
+        connectionStatus.value = 'connected'
+      } catch (error) {
+        console.error('❌ Failed to refresh non-realtime data:', error)
+        connectionStatus.value = 'disconnected'
+      } finally {
+        isLoading.value = false
+      }
+    } else {
+      // Full refresh if WebSocket is not available
+      await refreshData()
+    }
+    countdown.value = refreshDelay / 1000 // Reset countdown
+  }, refreshDelay)
 
   // Update countdown every second
   countdownInterval = setInterval(() => {
     countdown.value = Math.max(0, countdown.value - 1)
   }, 1000)
+  
+  countdown.value = refreshDelay / 1000
 }
 
 function stopAutoRefresh() {
@@ -483,6 +533,18 @@ function stopAutoRefresh() {
 }
 
 // Lifecycle
+// Manual refresh function
+async function manualRefresh() {
+  console.log('Manual refresh triggered')
+  await refreshData()
+}
+
+// Toggle WebSocket function
+function toggleWebSocket() {
+  console.log('WebSocket toggle triggered')
+  gameSessionsStore.toggleWebSocket()
+}
+
 onMounted(async () => {
   await refreshData()
   startAutoRefresh()

@@ -3,10 +3,29 @@ import GameSessionModel from '../../Models/GameSession.js';
 import { gameSessionsInsertSchema, gameSessionsUpdateSchema, gameSessionsSelectSchema } from '../../db/schema.js';
 import { z } from 'zod';
 import { PageController } from '../PageController.js';
+import { GameSessionEvents, type GameSessionEventData } from '../../websocket/gameSessionEvents.js';
 
 export default class GameSessionApiController extends PageController {
   constructor() {
     super(GameSessionModel, gameSessionsSelectSchema, gameSessionsInsertSchema, gameSessionsUpdateSchema);
+  }
+
+  // Helper function to convert database session to WebSocket event data
+  private convertToEventData(session: any): GameSessionEventData {
+    return {
+      id: session.id,
+      clientId: session.clientId,
+      gameId: session.gameId,
+      startTime: session.startTime instanceof Date ? session.startTime.toISOString() : session.startTime,
+      endTime: session.endTime ? (session.endTime instanceof Date ? session.endTime.toISOString() : session.endTime) : undefined,
+      isActive: session.isActive,
+      durationSeconds: session.durationSeconds
+    };
+  }
+
+  // Helper function to convert array of sessions
+  private convertToEventDataArray(sessions: any[]): GameSessionEventData[] {
+    return sessions.map(session => this.convertToEventData(session));
   }
   // Start a new game session
   async startSession(req: Request, res: Response) {
@@ -20,6 +39,16 @@ export default class GameSessionApiController extends PageController {
       }
 
       const session = await GameSessionModel.startSession(clientId, parseInt(gameId));
+      
+      // Emit WebSocket event for real-time updates
+      if (session) {
+        GameSessionEvents.sessionStarted(this.convertToEventData(session));
+        
+        // Update active sessions count
+        const activeSessions = await GameSessionModel.getAllActiveSessions();
+        GameSessionEvents.activeSessionsUpdated(this.convertToEventDataArray(activeSessions));
+        GameSessionEvents.activeSessionsCountUpdated(activeSessions.length);
+      }
       
       res.status(201).json({
         message: 'Game session started successfully',
@@ -42,7 +71,24 @@ export default class GameSessionApiController extends PageController {
         });
       }
 
+      // Get session data before ending for WebSocket event
+      const session = await GameSessionModel.readById(parseInt(sessionId));
+      
       await GameSessionModel.endSession(parseInt(sessionId));
+      
+      // Emit WebSocket event for real-time updates
+      if (session) {
+        GameSessionEvents.sessionEnded(this.convertToEventData({
+          ...session,
+          isActive: 0,
+          endTime: new Date().toISOString()
+        }));
+      }
+      
+      // Update active sessions count
+      const activeSessions = await GameSessionModel.getAllActiveSessions();
+      GameSessionEvents.activeSessionsUpdated(this.convertToEventDataArray(activeSessions));
+      GameSessionEvents.activeSessionsCountUpdated(activeSessions.length);
       
       res.json({
         message: 'Game session stopped successfully'
@@ -64,7 +110,21 @@ export default class GameSessionApiController extends PageController {
         });
       }
 
+      // Get active sessions for client before ending for WebSocket event
+      const activeSessionsForClient = await GameSessionModel.getActiveSessionsForClient(clientId);
+      const sessionIds = activeSessionsForClient.map(s => s.id);
+      
       await GameSessionModel.endActiveSessionsForClient(clientId);
+      
+      // Emit WebSocket event for real-time updates
+      if (sessionIds.length > 0) {
+        GameSessionEvents.clientSessionsStopped(clientId, sessionIds);
+      }
+      
+      // Update active sessions count
+      const activeSessions = await GameSessionModel.getAllActiveSessions();
+      GameSessionEvents.activeSessionsUpdated(this.convertToEventDataArray(activeSessions));
+      GameSessionEvents.activeSessionsCountUpdated(activeSessions.length);
       
       res.json({
         message: 'Active sessions stopped for client'
@@ -263,6 +323,16 @@ export default class GameSessionApiController extends PageController {
       const session = await GameSessionModel.create(sessionData);
       console.log('Created session:', session);
       
+      // Emit WebSocket event for real-time updates
+      if (session && session.isActive === 1) {
+        GameSessionEvents.sessionStarted(this.convertToEventData(session));
+        
+        // Update active sessions count
+        const activeSessions = await GameSessionModel.getAllActiveSessions();
+        GameSessionEvents.activeSessionsUpdated(this.convertToEventDataArray(activeSessions));
+        GameSessionEvents.activeSessionsCountUpdated(activeSessions.length);
+      }
+      
       res.status(201).json({
         message: 'Game session created successfully',
         session
@@ -337,6 +407,19 @@ export default class GameSessionApiController extends PageController {
       
       await GameSessionModel.update(parseInt(sessionId), updateData);
       
+      // Get updated session for WebSocket event
+      const updatedSession = await GameSessionModel.readById(parseInt(sessionId));
+      
+      // Emit WebSocket event for real-time updates
+      if (updatedSession) {
+        GameSessionEvents.sessionUpdated(this.convertToEventData(updatedSession));
+        
+        // Update active sessions if the session's active status changed
+        const activeSessions = await GameSessionModel.getAllActiveSessions();
+        GameSessionEvents.activeSessionsUpdated(this.convertToEventDataArray(activeSessions));
+        GameSessionEvents.activeSessionsCountUpdated(activeSessions.length);
+      }
+      
       res.json({
         message: 'Game session updated successfully'
       });
@@ -365,6 +448,14 @@ export default class GameSessionApiController extends PageController {
       }
 
       await GameSessionModel.delete(parseInt(sessionId));
+      
+      // Emit WebSocket event for real-time updates
+      GameSessionEvents.sessionDeleted(parseInt(sessionId));
+      
+      // Update active sessions count
+      const activeSessions = await GameSessionModel.getAllActiveSessions();
+      GameSessionEvents.activeSessionsUpdated(this.convertToEventDataArray(activeSessions));
+      GameSessionEvents.activeSessionsCountUpdated(activeSessions.length);
       
       res.json({
         message: 'Game session deleted successfully'

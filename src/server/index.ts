@@ -1,5 +1,7 @@
 import 'dotenv/config'
 import express from 'express';
+import { createServer } from 'http';
+import { Server as SocketIOServer } from 'socket.io';
 import ViteExpress from "vite-express";
 import cors from 'cors'
 
@@ -12,6 +14,14 @@ import './workers/sendAddress.js';
 
 const app = express()
 const port = Number(process.env.PORT || 3000)
+
+// Socket.IO will be initialized after ViteExpress setup
+let io: SocketIOServer;
+
+// Make io available globally for other modules
+declare global {
+  var socketIO: SocketIOServer;
+}
 
 if (!process.env.DATABASE_URL) {
   console.error('DATABASE_URL is not set in environment variables');
@@ -47,6 +57,41 @@ app.get('/api/ip', (req, res) => {
   res.json({ ip });
 });
 
-ViteExpress.listen(app, port, () =>
-  console.log(`Server is listening on port ${port}...`),
-);
+// Initialize ViteExpress and get the server instance
+const server = ViteExpress.listen(app, port, () => {
+  console.log(`🚀 Server is listening on port ${port}...`);
+  
+  // Initialize Socket.IO with the ViteExpress server
+  io = new SocketIOServer(server, {
+    cors: {
+      origin: "*",
+      methods: ["GET", "POST"]
+    }
+  });
+
+  // Make io available globally
+  global.socketIO = io;
+  
+  console.log(`🔌 Socket.IO server initialized on port ${port}`);
+
+  // Socket.IO connection handling
+  io.on('connection', (socket) => {
+    console.log('🟢 Client connected:', socket.id);
+    
+    // Join the game sessions room for real-time updates
+    socket.join('game-sessions');
+    console.log(`📡 Client ${socket.id} joined game-sessions room`);
+    
+    socket.on('disconnect', (reason) => {
+      console.log('🔴 Client disconnected:', socket.id, 'reason:', reason);
+    });
+    
+    socket.on('error', (error) => {
+      console.error('❌ Socket error for client', socket.id, ':', error);
+    });
+  });
+  
+  io.on('error', (error) => {
+    console.error('❌ Socket.IO server error:', error);
+  });
+});

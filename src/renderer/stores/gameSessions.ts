@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import api from '@/utls/api'
 import { useUsersStore, type User } from './users'
+import webSocketManager, { type GameSessionEventData, type WebSocketCallbacks } from '@/utls/websocket'
 
 export interface GameSession {
   id: number
@@ -28,6 +29,8 @@ export const useGameSessionsStore = defineStore('gameSessions', () => {
   const activeSessions = ref<GameSession[]>([])
   const isLoading = ref(false)
   const error = ref<string | null>(null)
+  const isConnected = ref(false)
+  const isWebSocketEnabled = ref(true)
   
   // Get users store for user data
   const usersStore = useUsersStore()
@@ -93,6 +96,153 @@ export const useGameSessionsStore = defineStore('gameSessions', () => {
     } finally {
       isLoading.value = false
     }
+  }
+
+  // WebSocket event handlers
+  function handleSessionStarted(sessionData: GameSessionEventData) {
+    enhanceSessionWithUserData(sessionData).then(enhancedSession => {
+      // Add to sessions if not already present
+      const existingIndex = sessions.value.findIndex(s => s.id === enhancedSession.id)
+      if (existingIndex === -1) {
+        sessions.value.unshift(enhancedSession)
+      }
+      
+      // Add to active sessions if not already present
+      const activeIndex = activeSessions.value.findIndex(s => s.id === enhancedSession.id)
+      if (activeIndex === -1) {
+        activeSessions.value.unshift(enhancedSession)
+      }
+    })
+  }
+
+  function handleSessionEnded(sessionData: GameSessionEventData) {
+    enhanceSessionWithUserData(sessionData).then(enhancedSession => {
+      // Update in sessions array
+      const sessionIndex = sessions.value.findIndex(s => s.id === enhancedSession.id)
+      if (sessionIndex !== -1) {
+        sessions.value[sessionIndex] = enhancedSession
+      }
+      
+      // Remove from active sessions
+      activeSessions.value = activeSessions.value.filter(s => s.id !== enhancedSession.id)
+    })
+  }
+
+  function handleSessionUpdated(sessionData: GameSessionEventData) {
+    enhanceSessionWithUserData(sessionData).then(enhancedSession => {
+      // Update in sessions array
+      const sessionIndex = sessions.value.findIndex(s => s.id === enhancedSession.id)
+      if (sessionIndex !== -1) {
+        sessions.value[sessionIndex] = enhancedSession
+      }
+      
+      // Update in active sessions if it's active, otherwise remove it
+      const activeIndex = activeSessions.value.findIndex(s => s.id === enhancedSession.id)
+      if (enhancedSession.isActive === 1) {
+        if (activeIndex !== -1) {
+          activeSessions.value[activeIndex] = enhancedSession
+        } else {
+          activeSessions.value.push(enhancedSession)
+        }
+      } else {
+        if (activeIndex !== -1) {
+          activeSessions.value.splice(activeIndex, 1)
+        }
+      }
+    })
+  }
+
+  function handleSessionDeleted(data: { id: number }) {
+    // Remove from both arrays
+    sessions.value = sessions.value.filter(s => s.id !== data.id)
+    activeSessions.value = activeSessions.value.filter(s => s.id !== data.id)
+  }
+
+  function handleClientSessionsStopped(data: { clientId: string; sessionIds: number[] }) {
+    // Update sessions to mark them as inactive
+    sessions.value.forEach(session => {
+      if (data.sessionIds.includes(session.id)) {
+        session.isActive = 0
+        session.endTime = new Date().toISOString()
+      }
+    })
+    
+    // Remove from active sessions
+    activeSessions.value = activeSessions.value.filter(
+      session => !data.sessionIds.includes(session.id)
+    )
+  }
+
+  function handleActiveSessionsUpdated(data: { sessions: GameSessionEventData[] }) {
+    // Replace active sessions with the server's current list
+    enhanceSessionsWithUserData(data.sessions).then(enhancedSessions => {
+      activeSessions.value = enhancedSessions
+    })
+  }
+
+  function handleWebSocketConnected() {
+    console.log('WebSocket connected - game sessions store')
+    isConnected.value = true
+    error.value = null
+  }
+
+  function handleWebSocketDisconnected() {
+    console.log('WebSocket disconnected - game sessions store')
+    isConnected.value = false
+  }
+
+  function handleWebSocketError(error: any) {
+    console.error('WebSocket error in game sessions store:', error)
+    // Don't overwrite existing errors, just log
+  }
+
+  // Initialize WebSocket connection and event handlers
+  function initializeWebSocket() {
+    if (!isWebSocketEnabled.value) return
+    
+    const callbacks: WebSocketCallbacks = {
+      onSessionStarted: handleSessionStarted,
+      onSessionEnded: handleSessionEnded,
+      onSessionUpdated: handleSessionUpdated,
+      onSessionDeleted: handleSessionDeleted,
+      onClientSessionsStopped: handleClientSessionsStopped,
+      onActiveSessionsUpdated: handleActiveSessionsUpdated,
+      onConnected: handleWebSocketConnected,
+      onDisconnected: handleWebSocketDisconnected,
+      onError: handleWebSocketError
+    }
+    
+    webSocketManager.setCallbacks(callbacks)
+    isConnected.value = webSocketManager.getConnectionStatus()
+  }
+
+  // Cleanup WebSocket connection
+  function cleanupWebSocket() {
+    // We don't disconnect the websocket as other stores might be using it
+    // Just clear our callbacks by setting empty ones
+    webSocketManager.setCallbacks({})
+  }
+
+  // Toggle WebSocket functionality
+  function toggleWebSocket() {
+    isWebSocketEnabled.value = !isWebSocketEnabled.value
+    if (isWebSocketEnabled.value) {
+      initializeWebSocket()
+    } else {
+      cleanupWebSocket()
+      isConnected.value = false
+    }
+  }
+
+  // Manual refresh that works with or without WebSocket
+  async function refreshActiveSessions() {
+    if (isWebSocketEnabled.value && isConnected.value) {
+      // If WebSocket is connected, we're already getting real-time updates
+      // But we can still do a manual fetch if needed
+      console.log('WebSocket is connected, but forcing manual refresh')
+    }
+    
+    await fetchActiveSessions()
   }
 
   async function fetchClientSessions(clientId: string) {
@@ -352,10 +502,31 @@ export const useGameSessionsStore = defineStore('gameSessions', () => {
     })
   }
 
+  // Helper function to enhance a single session with user data
+  async function enhanceSessionWithUserData(sessionData: GameSessionEventData): Promise<GameSession> {
+    // Ensure users are loaded
+    if (usersStore.users.length === 0) {
+      try {
+        await usersStore.fetchUsers()
+      } catch (error) {
+        console.warn('Failed to fetch users for session enhancement:', error)
+      }
+    }
+
+    const user = usersStore.users.find(u => u.clientId === sessionData.clientId)
+    return {
+      ...sessionData,
+      user: user || undefined
+    }
+  }
+
   // Helper function to get user info for a session
   function getUserForSession(session: GameSession): User | undefined {
     return session.user || usersStore.users.find(u => u.clientId === session.clientId)
   }
+
+  // Initialize WebSocket when store is created
+  initializeWebSocket()
 
   return {
     // State
@@ -363,6 +534,8 @@ export const useGameSessionsStore = defineStore('gameSessions', () => {
     activeSessions,
     isLoading,
     error,
+    isConnected,
+    isWebSocketEnabled,
 
     // Computed
     sessionCount,
@@ -384,12 +557,19 @@ export const useGameSessionsStore = defineStore('gameSessions', () => {
     deleteSession,
     getSessionDetails,
 
+    // WebSocket management
+    initializeWebSocket,
+    cleanupWebSocket,
+    toggleWebSocket,
+    refreshActiveSessions,
+
     // Utilities
     formatDuration,
     calculateSessionDuration,
     clearError,
     clearSessions,
     enhanceSessionsWithUserData,
+    enhanceSessionWithUserData,
     getUserForSession
   }
 })

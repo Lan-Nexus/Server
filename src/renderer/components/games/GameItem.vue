@@ -55,7 +55,7 @@ const gamesStore = useGamesStore();
         <img
           :src="game.headerImage"
           :alt="`${game.name} header`"
-          class="w-32 h-18 object-cover transition-transform duration-300 group-hover:brightness-110"
+          class="h-18 object-cover transition-transform duration-300 group-hover:brightness-110"
           loading="lazy"
         />
         <div

@@ -73,6 +73,16 @@ export default class GameSessionModel extends Model {
       .then(rows => rows[0]);
   }
 
+  static async getActiveSessionsForClient(clientId: string) {
+    return db.select()
+      .from(gameSessionsTable)
+      .where(and(
+        eq(gameSessionsTable.clientId, clientId),
+        eq(gameSessionsTable.isActive, 1)
+      ))
+      .orderBy(desc(gameSessionsTable.startTime));
+  }
+
   static async getSessionsForClient(clientId: string) {
     return db.select()
       .from(gameSessionsTable)

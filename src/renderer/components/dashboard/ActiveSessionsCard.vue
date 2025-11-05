@@ -4,6 +4,16 @@
       <h2 class="text-xl font-bold flex items-center gap-2">
         <i class="fas fa-circle text-success animate-pulse"></i>
         Currently Playing
+        <div class="ml-auto flex items-center gap-2">
+          <div v-if="isWebSocketConnected" class="flex items-center gap-1 text-xs text-success">
+            <i class="fas fa-bolt"></i>
+            <span>Live</span>
+          </div>
+          <div v-else class="flex items-center gap-1 text-xs text-warning">
+            <i class="fas fa-clock"></i>
+            <span>Polling</span>
+          </div>
+        </div>
       </h2>
     </div>
 
@@ -57,6 +67,7 @@ interface Props {
   getUserForSession: (session: GameSession) => User | undefined
   getGameName: (gameId: number) => string
   formatSessionDuration: (session: GameSession) => string
+  isWebSocketConnected?: boolean
 }
 
 defineProps<Props>()
