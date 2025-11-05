@@ -186,8 +186,6 @@ await fetch(`/api/game-sessions/${sessionId}/stop`, {
    - Auto-refreshes every 30 seconds
    - Shows active players, popular games, and recent activity
 
-For detailed API documentation, see [GAME_TRACKER_API.md](./GAME_TRACKER_API.md).
-
 ## File Upload Support
 
 The system supports uploading various game assets:
