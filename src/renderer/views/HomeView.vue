@@ -100,14 +100,15 @@ const eventsStore = useEventsStore();
 
 // Load data on mount
 onMounted(async () => {
-  // Load games for count
-  gamesStore.getGames();
-  
-  // Load active sessions for player count
-  gameSessionsStore.fetchActiveSessions();
-  
-  // Load events for upcoming count
-  eventsStore.fetchEvents();
+  try {
+    await Promise.all([
+      gamesStore.getGames(),
+      gameSessionsStore.fetchActiveSessions(),
+      eventsStore.fetchEvents()
+    ]);
+  } catch (error) {
+    console.error('Failed to load initial data:', error);
+  }
 });
 
 // Computed properties
