@@ -58,7 +58,7 @@ withDefaults(defineProps<Props>(), {
   isWebSocketConnected: false,
   isWebSocketEnabled: true,
   isRefreshing: false,
-  onToggleWebSocket: () => {},
-  onManualRefresh: () => {}
+  onToggleWebSocket: () => { console.warn('DashboardHeader: onToggleWebSocket handler not provided'); },
+  onManualRefresh: () => { console.warn('DashboardHeader: onManualRefresh handler not provided'); }
 })
 </script>
