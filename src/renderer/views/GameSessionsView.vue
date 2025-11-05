@@ -224,7 +224,7 @@
                     <i class="fas fa-stop"></i>
                   </button>
                   <button 
-                    @click="deleteSession(session.id)"
+                    @click="promptDeleteSession(session.id)"
                     class="btn btn-xs btn-error"
                     title="Delete"
                     :disabled="gameSessionsStore.isLoading"
@@ -463,6 +463,21 @@
         <span class="font-medium">{{ errorMessage }}</span>
       </div>
     </div>
+
+    <!-- Delete Confirmation Modal -->
+    <ConfirmPopup
+      v-model="showDeleteModal"
+      primary="Delete"
+      secondary="Cancel"
+      @primary="confirmDeleteSession"
+    >
+      <template #title>Delete Session</template>
+      <template #message>
+        Are you sure you want to delete this session?
+        <br />
+        This action cannot be undone.
+      </template>
+    </ConfirmPopup>
   </div>
 </template>
 
@@ -472,6 +487,7 @@ import { useGameSessionsStore, type CreateGameSessionType, type GameSession } fr
 import { useGamesStore } from '@/stores/games'
 import { useUsersStore } from '@/stores/users'
 import UserAvatar from '@/components/common/UserAvatar.vue'
+import ConfirmPopup from '@/components/ConfirmPopup.vue'
 
 const gameSessionsStore = useGameSessionsStore()
 const gamesStore = useGamesStore()
@@ -481,6 +497,8 @@ const usersStore = useUsersStore()
 const showCreateModal = ref(false)
 const showViewModal = ref(false)
 const viewingSession = ref<GameSession | null>(null)
+const showDeleteModal = ref(false)
+const sessionToDelete = ref<number | null>(null)
 
 // Filters and Search
 const searchQuery = ref('')
@@ -663,12 +681,18 @@ async function stopSession(sessionId: number) {
   }
 }
 
-async function deleteSession(sessionId: number) {
-  if (!confirm('Are you sure you want to delete this session?')) return
+function promptDeleteSession(sessionId: number) {
+  sessionToDelete.value = sessionId
+  showDeleteModal.value = true
+}
+
+async function confirmDeleteSession() {
+  if (sessionToDelete.value === null) return
   
   try {
-    await gameSessionsStore.deleteSession(sessionId)
+    await gameSessionsStore.deleteSession(sessionToDelete.value)
     showToast('Session deleted successfully!')
+    sessionToDelete.value = null
   } catch (error: any) {
     showToast(error.message || 'Failed to delete session', true)
   }
