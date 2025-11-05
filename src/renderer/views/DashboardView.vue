@@ -483,9 +483,15 @@ async function refreshData() {
   }
 }
 
+// Extracted magic numbers as named constants for refresh intervals
+const WEBSOCKET_REFRESH_INTERVAL = 120000; // 2 minutes
+const POLLING_REFRESH_INTERVAL = 30000;    // 30 seconds
+
 function startAutoRefresh() {
   // If WebSocket is enabled and connected, reduce refresh frequency for non-realtime data
-  const refreshDelay = gameSessionsStore.isWebSocketEnabled && gameSessionsStore.isConnected ? 120000 : 30000 // 2 minutes vs 30 seconds
+  const refreshDelay = gameSessionsStore.isWebSocketEnabled && gameSessionsStore.isConnected
+    ? WEBSOCKET_REFRESH_INTERVAL
+    : POLLING_REFRESH_INTERVAL;
   
   // Refresh data at the determined interval
   refreshInterval = setInterval(async () => {

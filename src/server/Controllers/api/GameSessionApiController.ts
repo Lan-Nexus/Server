@@ -262,14 +262,6 @@ export default class GameSessionApiController extends PageController {
   // Create a new session (manual creation)
   async createSession(req: Request, res: Response) {
     try {
-      console.log('Creating session with body:', req.body);
-      console.log('Body type and values:', {
-        endTime: req.body.endTime,
-        endTimeType: typeof req.body.endTime,
-        endTimeLength: req.body.endTime?.length,
-        endTimeStringified: JSON.stringify(req.body.endTime)
-      });
-      
       // Robust preprocessing to handle empty endTime
       const processedBody = { ...req.body };
       
@@ -281,25 +273,10 @@ export default class GameSessionApiController extends PageController {
       
       // Also handle the case where endTime exists but is falsy
       if (processedBody.hasOwnProperty('endTime') && !processedBody.endTime) {
-        console.log('Removing falsy endTime field');
         delete processedBody.endTime;
       }
       
-      console.log('Processed body:', processedBody);
-      console.log('Processed body endTime:', {
-        endTime: processedBody.endTime,
-        hasEndTime: processedBody.hasOwnProperty('endTime'),
-        endTimeType: typeof processedBody.endTime
-      });
-      
-      console.log('About to validate with schema...');
       const validatedData = gameSessionsInsertSchema.parse(processedBody);
-      console.log('Validated data:', validatedData);
-      console.log('Validated endTime details:', {
-        endTime: validatedData.endTime,
-        endTimeType: typeof validatedData.endTime,
-        endTimeInstanceOf: validatedData.endTime instanceof Date ? 'Date' : 'Other'
-      });
       
       // Convert endTime string to Date if it exists and isn't already a Date
       const sessionData = {
@@ -308,16 +285,7 @@ export default class GameSessionApiController extends PageController {
                  validatedData.endTime ? new Date(validatedData.endTime) : undefined
       };
       
-      console.log('Final session data for DB:', sessionData);
-      console.log('Final endTime details:', {
-        endTime: sessionData.endTime,
-        endTimeType: typeof sessionData.endTime,
-        endTimeInstanceOf: sessionData.endTime instanceof Date ? 'Date' : 'Other'
-      });
-      
-      console.log('About to call GameSessionModel.create...');
       const session = await GameSessionModel.create(sessionData);
-      console.log('Created session:', session);
       
       // Emit WebSocket event for real-time updates
       if (session && session.isActive === 1) {
@@ -364,7 +332,6 @@ export default class GameSessionApiController extends PageController {
   
     // Also handle the case where endTime exists but is falsy
     if (processedBody.hasOwnProperty('endTime') && !processedBody.endTime) {
-      console.log('mapRequestBody: Removing falsy endTime field');
       delete processedBody.endTime;
     }
   
