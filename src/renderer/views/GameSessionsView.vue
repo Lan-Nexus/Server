@@ -207,13 +207,7 @@
                   >
                     <i class="fas fa-eye"></i>
                   </button>
-                  <button 
-                    @click="editSession(session)"
-                    class="btn btn-xs btn-ghost"
-                    title="Edit"
-                  >
-                    <i class="fas fa-edit"></i>
-                  </button>
+
                   <button 
                     v-if="session.isActive"
                     @click="stopSession(session.id)"
@@ -649,10 +643,7 @@ function viewSession(session: GameSession) {
   showViewModal.value = true
 }
 
-function editSession(session: GameSession) {
-  // TODO: Implement edit functionality
-  showToast('Edit functionality coming soon!', true)
-}
+
 
 async function stopSession(sessionId: number) {
   try {

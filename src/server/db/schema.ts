@@ -168,6 +168,9 @@ export const usersUpdateSchema = createUpdateSchema(usersTable, {
   ]).optional(),
 });
 
+// Helper function to check if a value is empty/null
+const isEmptyValue = (val: string) => !val?.trim() || val === 'null' || val === 'undefined';
+
 export const gameSessionsSelectSchema = createSelectSchema(gameSessionsTable);
 export const gameSessionsInsertSchema = createInsertSchema(gameSessionsTable, {
   clientId: z.string(),
@@ -175,7 +178,7 @@ export const gameSessionsInsertSchema = createInsertSchema(gameSessionsTable, {
   startTime: z.string().transform((val) => new Date(val)),
   endTime: z.union([
     z.string().transform((val) => {
-      if (!val || val.trim() === '' || val === 'null' || val === 'undefined') {
+      if (isEmptyValue(val)) {
         return undefined;
       }
       return new Date(val);
@@ -191,7 +194,7 @@ export const gameSessionsUpdateSchema = createUpdateSchema(gameSessionsTable, {
   startTime: z.string().transform((val) => new Date(val)).optional(),
   endTime: z.union([
     z.string().transform((val) => {
-      if (!val || val.trim() === '' || val === 'null' || val === 'undefined') {
+      if (isEmptyValue(val)) {
         return undefined;
       }
       return new Date(val);

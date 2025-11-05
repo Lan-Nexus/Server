@@ -274,11 +274,7 @@ export default class GameSessionApiController extends PageController {
       const processedBody = { ...req.body };
       
       // Handle all possible empty/invalid endTime values
-      if (processedBody.endTime === "" || 
-          processedBody.endTime === null || 
-          processedBody.endTime === undefined ||
-          processedBody.endTime === "null" ||
-          processedBody.endTime === "undefined") {
+      if (!processedBody.endTime || processedBody.endTime === "" || processedBody.endTime === "null") {
         console.log('Removing empty/null/undefined endTime field');
         delete processedBody.endTime;
       }
@@ -361,11 +357,7 @@ export default class GameSessionApiController extends PageController {
     const processedBody = { ...body };
   
     // Handle all possible empty/invalid endTime values
-    if (processedBody.endTime === "" || 
-        processedBody.endTime === null || 
-        processedBody.endTime === undefined ||
-        processedBody.endTime === "null" ||
-        processedBody.endTime === "undefined") {
+    if (!processedBody.endTime || processedBody.endTime === "" || processedBody.endTime === "null") {
       console.log('mapRequestBody: Removing empty/null/undefined endTime field');
       delete processedBody.endTime;
     }
