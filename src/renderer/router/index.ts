@@ -7,6 +7,7 @@ import GamesView from '@/views/GamesView.vue'
 import LoginView from '@/views/LoginView.vue'
 import SetupView from '@/views/SetupView.vue'
 import CreateGameSteamView from '@/views/CreateGameSteamView.vue'
+import CreateShortcutGameView from '@/views/CreateShortcutGameView.vue'
 import FindGameView from '@/views/FindGameView.vue'
 import addGameView from '@/views/addGameView.vue'
 import EventsView from '@/views/EventsView.vue'
@@ -43,6 +44,11 @@ const router = createRouter({
       path: '/game/create',
       name: 'createGame',
       component: CreateGameView,
+    },
+    {
+      path: '/game/create-shortcut',
+      name: 'createShortcutGame',
+      component: CreateShortcutGameView,
     },
     {
       path: '/game/view/:id',

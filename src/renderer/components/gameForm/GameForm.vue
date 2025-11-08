@@ -10,6 +10,7 @@ const props = defineProps<{
   primary: string;
   isProgressing: boolean;
   progressLevel?: number;
+  type?: string; // Allow parent to specify the type
 }>();
 
 const emit = defineEmits<{
@@ -52,7 +53,7 @@ const fileUpload = ref<File | undefined>();
 const install = ref<string>(props.game?.install || "");
 const uninstall = ref<string>(props.game?.uninstall || "");
 const play = ref<string>(props.game?.play || "await run(GAME_EXECUTABLE);");
-const type = ref<string>(props.game?.type || "archive");
+const type = ref<string>(props.type || props.game?.type || "archive");
 const status = ref<string>(props.game?.status || "Draft");
 
 const iconPath = ref<string>(props.game?.icon || "");
@@ -84,9 +85,22 @@ const archivePath = ref<string>(
       type="text"
       v-model="executable"
       class="input input-bordered w-full"
-      placeholder="e.g. game.exe"
+      placeholder="e.g. C:\Program Files\Game\game.exe"
     />
     <p class="label"></p>
+    <template v-if="type === 'shortcut'">
+      <div class="alert alert-info mt-2">
+        <i class="fas fa-info-circle"></i>
+        <div class="text-sm">
+          <strong>Provide the full path to the executable</strong><br />
+          Example: C:\Program Files\Game\game.exe<br />
+          <small class="opacity-70"
+            >The system will automatically track when this game is
+            running.</small
+          >
+        </div>
+      </div>
+    </template>
   </fieldset>
 
   <fieldset class="fieldset">
@@ -98,7 +112,7 @@ const archivePath = ref<string>(
     ></textarea>
     <p class="label"></p>
   </fieldset>
-  <template v-if="type != 'steam'">
+  <template v-if="type != 'steam' && type != 'shortcut'">
     <fieldset class="fieldset">
       <legend class="fieldset-legend">Needs Game Key?</legend>
       <select class="select select-bordered w-full" v-model="needsKey">
@@ -141,7 +155,7 @@ const archivePath = ref<string>(
       class="w-full"
     />
   </div>
-  <template v-if="type != 'steam'">
+  <template v-if="type != 'steam' && type != 'shortcut'">
     <CodeEditor v-model="install" title="Install Script"></CodeEditor>
     <CodeEditor v-model="uninstall" title="Uninstall Script"></CodeEditor>
     <CodeEditor v-model="play" title="Play Script"></CodeEditor>

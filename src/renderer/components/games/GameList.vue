@@ -31,7 +31,10 @@ const gameCount = computed(() => gamesStore.games.length);
               <i class="fas fa-plus"></i>
               Add Game
             </div>
-            <ul tabindex="0" class="dropdown-content menu bg-base-100/95 backdrop-blur-sm border border-base-300/20 rounded-xl shadow-2xl w-56 p-2 mt-2 gap-1">
+            <ul
+              tabindex="0"
+              class="dropdown-content menu bg-base-100/95 backdrop-blur-sm border border-base-300/20 rounded-xl shadow-2xl w-56 p-2 mt-2 gap-1"
+            >
               <li>
                 <router-link
                   :to="{ name: 'findGame' }"
@@ -71,6 +74,22 @@ const gameCount = computed(() => gamesStore.games.length);
                   <div>
                     <div class="font-semibold">Create New</div>
                     <div class="text-xs opacity-60">Create from scratch</div>
+                  </div>
+                </router-link>
+              </li>
+              <li>
+                <router-link
+                  :to="{ name: 'createShortcutGame' }"
+                  class="flex items-center gap-3 p-3 hover:bg-warning/10 hover:text-warning rounded-lg transition-all duration-200"
+                >
+                  <div class="p-1 bg-warning/10 rounded-lg">
+                    <i class="fas fa-external-link-alt text-warning"></i>
+                  </div>
+                  <div>
+                    <div class="font-semibold">Create Shortcut</div>
+                    <div class="text-xs opacity-60">
+                      Quick launch existing game
+                    </div>
                   </div>
                 </router-link>
               </li>
