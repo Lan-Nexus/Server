@@ -8,6 +8,13 @@ export interface GameSessionEventData {
   endTime?: string;
   isActive: number;
   durationSeconds?: number;
+  user?: {
+    id: number;
+    name: string;
+    clientId: string;
+    role: string;
+    avatar: string | null;
+  } | null;
 }
 
 export class GameSessionEvents {
