@@ -93,20 +93,6 @@ export class GameSessionEvents {
   }
 
   /**
-   * Emit current active sessions count for dashboard updates
-   */
-  static activeSessionsCountUpdated(count: number): void {
-    const io = this.getIO();
-    if (!io) {
-      console.warn('Socket.IO not available for activeSessionsCountUpdated event');
-      return;
-    }
-
-    console.log('Emitting active_sessions_count_updated event:', count);
-    io.to('game-sessions').emit('active_sessions_count_updated', { count });
-  }
-
-  /**
    * Emit the current list of all active sessions
    */
   static activeSessionsUpdated(activeSessions: GameSessionEventData[]): void {
@@ -116,7 +102,7 @@ export class GameSessionEvents {
       return;
     }
 
-    console.log('Emitting active_sessions_updated event with', activeSessions.length, 'sessions');
+    console.log('Emitting active_sessions_updated event:', activeSessions.length, 'sessions');
     io.to('game-sessions').emit('active_sessions_updated', { sessions: activeSessions });
   }
 }

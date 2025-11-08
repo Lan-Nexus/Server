@@ -12,7 +12,7 @@ import Ip from './ip.js';
 import './workers/sendAddress.js';
 import GameSessionModel from './Models/GameSession.js';
 import UserModel from './Models/User.js';
-import { GameSessionEvents } from './websocket/gameSessionEvents.js';
+import { GameSessionEvents, type GameSessionEventData } from './websocket/gameSessionEvents.js';
 
 const app = express()
 const port = Number(process.env.PORT || 3000)
@@ -73,6 +73,30 @@ const server = ViteExpress.listen(app, port, () => {
 
   // Make io available globally
   global.socketIO = io;
+
+  // Helper function to convert sessions to event data with user info
+  async function convertSessionsToEventDataWithUsers(sessions: any[]): Promise<GameSessionEventData[]> {
+    return Promise.all(
+      sessions.map(async (session) => {
+        const sessionUser = await UserModel.findByClientId(session.clientId);
+        return {
+          id: session.id,
+          clientId: session.clientId,
+          gameId: session.gameId,
+          startTime: session.startTime.toISOString(),
+          endTime: session.endTime?.toISOString(),
+          isActive: session.isActive,
+          user: sessionUser ? {
+            id: sessionUser.id,
+            name: sessionUser.name,
+            clientId: sessionUser.clientId,
+            role: sessionUser.role,
+            avatar: sessionUser.avatar
+          } : null
+        };
+      })
+    );
+  }
   
   console.log(`🔌 Socket.IO server initialized on port ${port}`);
 
@@ -115,28 +139,8 @@ const server = ViteExpress.listen(app, port, () => {
           
           // Update active sessions count with user data
           const activeSessions = await GameSessionModel.getAllActiveSessions();
-          const activeSessionsWithUsers = await Promise.all(
-            activeSessions.map(async (session) => {
-              const sessionUser = await UserModel.findByClientId(session.clientId);
-              return {
-                id: session.id,
-                clientId: session.clientId,
-                gameId: session.gameId,
-                startTime: session.startTime.toISOString(),
-                endTime: session.endTime?.toISOString(),
-                isActive: session.isActive,
-                user: sessionUser ? {
-                  id: sessionUser.id,
-                  name: sessionUser.name,
-                  clientId: sessionUser.clientId,
-                  role: sessionUser.role,
-                  avatar: sessionUser.avatar
-                } : null
-              };
-            })
-          );
+          const activeSessionsWithUsers = await convertSessionsToEventDataWithUsers(activeSessions);
           
-          GameSessionEvents.activeSessionsCountUpdated(activeSessions.length);
           GameSessionEvents.activeSessionsUpdated(activeSessionsWithUsers);
         }
       } catch (error) {
@@ -180,28 +184,8 @@ const server = ViteExpress.listen(app, port, () => {
             
             // Update active sessions count with user data
             const activeSessions = await GameSessionModel.getAllActiveSessions();
-            const activeSessionsWithUsers = await Promise.all(
-              activeSessions.map(async (session) => {
-                const sessionUser = await UserModel.findByClientId(session.clientId);
-                return {
-                  id: session.id,
-                  clientId: session.clientId,
-                  gameId: session.gameId,
-                  startTime: session.startTime.toISOString(),
-                  endTime: session.endTime?.toISOString(),
-                  isActive: session.isActive,
-                  user: sessionUser ? {
-                    id: sessionUser.id,
-                    name: sessionUser.name,
-                    clientId: sessionUser.clientId,
-                    role: sessionUser.role,
-                    avatar: sessionUser.avatar
-                  } : null
-                };
-              })
-            );
+            const activeSessionsWithUsers = await convertSessionsToEventDataWithUsers(activeSessions);
             
-            GameSessionEvents.activeSessionsCountUpdated(activeSessions.length);
             GameSessionEvents.activeSessionsUpdated(activeSessionsWithUsers);
           }
         }
@@ -219,26 +203,7 @@ const server = ViteExpress.listen(app, port, () => {
         // Send current active sessions to the new client
         try {
           const activeSessions = await GameSessionModel.getAllActiveSessions();
-          const activeSessionsWithUsers = await Promise.all(
-            activeSessions.map(async (session) => {
-              const sessionUser = await UserModel.findByClientId(session.clientId);
-              return {
-                id: session.id,
-                clientId: session.clientId,
-                gameId: session.gameId,
-                startTime: session.startTime.toISOString(),
-                endTime: session.endTime?.toISOString(),
-                isActive: session.isActive,
-                user: sessionUser ? {
-                  id: sessionUser.id,
-                  name: sessionUser.name,
-                  clientId: sessionUser.clientId,
-                  role: sessionUser.role,
-                  avatar: sessionUser.avatar
-                } : null
-              };
-            })
-          );
+          const activeSessionsWithUsers = await convertSessionsToEventDataWithUsers(activeSessions);
           
           socket.emit('active_sessions_updated', { sessions: activeSessionsWithUsers });
           console.log(`📤 Sent ${activeSessionsWithUsers.length} active sessions to new client`);
@@ -253,26 +218,7 @@ const server = ViteExpress.listen(app, port, () => {
       console.log('📡 Client requested active sessions');
       try {
         const activeSessions = await GameSessionModel.getAllActiveSessions();
-        const activeSessionsWithUsers = await Promise.all(
-          activeSessions.map(async (session) => {
-            const sessionUser = await UserModel.findByClientId(session.clientId);
-            return {
-              id: session.id,
-              clientId: session.clientId,
-              gameId: session.gameId,
-              startTime: session.startTime.toISOString(),
-              endTime: session.endTime?.toISOString(),
-              isActive: session.isActive,
-              user: sessionUser ? {
-                id: sessionUser.id,
-                name: sessionUser.name,
-                clientId: sessionUser.clientId,
-                role: sessionUser.role,
-                avatar: sessionUser.avatar
-              } : null
-            };
-          })
-        );
+        const activeSessionsWithUsers = await convertSessionsToEventDataWithUsers(activeSessions);
         
         socket.emit('active_sessions_updated', { sessions: activeSessionsWithUsers });
         console.log(`📤 Sent ${activeSessionsWithUsers.length} active sessions on request`);

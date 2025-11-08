@@ -16,7 +16,6 @@ export interface WebSocketCallbacks {
   onSessionUpdated?: (session: GameSessionEventData) => void
   onSessionDeleted?: (data: { id: number }) => void
   onClientSessionsStopped?: (data: { clientId: string; sessionIds: number[] }) => void
-  onActiveSessionsCountUpdated?: (data: { count: number }) => void
   onActiveSessionsUpdated?: (data: { sessions: GameSessionEventData[] }) => void
   onConnected?: () => void
   onDisconnected?: () => void
@@ -44,7 +43,7 @@ class WebSocketManager {
       console.log('  - Current port:', window.location.port)
       console.log('  - Current protocol:', window.location.protocol)
       console.log('  - Current pathname:', window.location.pathname)
-      
+
       // Test if the proxy is working by checking if we can reach the backend
       this.testProxyConnection().then(isProxyWorking => {
         console.log('🔧 Proxy test result:', isProxyWorking ? 'Working' : 'Failed')
@@ -63,9 +62,9 @@ class WebSocketManager {
   private async testProxyConnection(): Promise<boolean> {
     try {
       // Test if we can reach the backend through the proxy
-      const response = await fetch('/api/ip', { 
+      const response = await fetch('/api/ip', {
         method: 'GET',
-        timeout: 5000 
+        timeout: 5000
       } as any)
       return response.ok
     } catch (error) {
@@ -78,7 +77,7 @@ class WebSocketManager {
     try {
       // Determine the correct server URL
       let serverUrl = undefined // Let Socket.IO auto-detect
-      
+
       // If we're on a development port and proxy test failed, connect directly
       if ((window.location.port === '5173' || window.location.port === '4173')) {
         console.log('🔧 Development mode detected, checking proxy...')
@@ -88,9 +87,9 @@ class WebSocketManager {
         serverUrl = `${protocol}//${hostname}:3000`
         console.log('🔧 Will try direct connection to:', serverUrl)
       }
-      
+
       console.log('🔌 Creating Socket.IO connection to:', serverUrl || 'auto-detected')
-      
+
       this.socket = io(serverUrl, {
         transports: ['websocket', 'polling'],
         upgrade: true,
@@ -127,7 +126,7 @@ class WebSocketManager {
       console.log('🔴 WebSocket disconnected:', reason)
       this.isConnected = false
       this.callbacks.onDisconnected?.()
-      
+
       // Always try to reconnect on disconnect unless it was manual
       if (reason !== 'io client disconnect') {
         this.scheduleReconnect()
@@ -143,12 +142,12 @@ class WebSocketManager {
         description: error.description,
         context: error.context
       })
-      
+
       // If this is a timeout error and we haven't tried direct connection yet
       if (error.message === 'timeout' && this.reconnectAttempts === 1) {
         console.log('🔧 Timeout detected, will try direct connection on next attempt')
       }
-      
+
       this.callbacks.onError?.(error)
       this.scheduleReconnect()
     })
@@ -179,10 +178,6 @@ class WebSocketManager {
       this.callbacks.onClientSessionsStopped?.(data)
     })
 
-    this.socket.on('active_sessions_count_updated', (data: { count: number }) => {
-      console.log('📥 Received active_sessions_count_updated event:', data)
-      this.callbacks.onActiveSessionsCountUpdated?.(data)
-    })
 
     this.socket.on('active_sessions_updated', (data: { sessions: GameSessionEventData[] }) => {
       console.log('📥 Received active_sessions_updated event:', data.sessions.length, 'sessions')
@@ -205,7 +200,7 @@ class WebSocketManager {
     this.reconnectAttempts++
 
     console.log(`🔄 Scheduling reconnection attempt ${this.reconnectAttempts} in ${delay}ms`)
-    
+
     this.reconnectTimeout = window.setTimeout(() => {
       console.log('🔄 Attempting to reconnect...')
       this.disconnect()
@@ -227,7 +222,7 @@ class WebSocketManager {
       this.socket.disconnect()
       this.socket = null
     }
-    
+
     this.isConnected = false
   }
 

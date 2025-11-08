@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import GameSessionModel from '../../Models/GameSession.js';
+import UserModel from '../../Models/User.js';
 import { gameSessionsInsertSchema, gameSessionsUpdateSchema, gameSessionsSelectSchema } from '../../db/schema.js';
 import { z } from 'zod';
 import { PageController } from '../PageController.js';
@@ -27,6 +28,32 @@ export default class GameSessionApiController extends PageController {
   private convertToEventDataArray(sessions: any[]): GameSessionEventData[] {
     return sessions.map(session => this.convertToEventData(session));
   }
+
+  // Helper function to convert session to event data with user information
+  private async convertToEventDataWithUser(session: any): Promise<GameSessionEventData> {
+    const sessionUser = await UserModel.findByClientId(session.clientId);
+    return {
+      id: session.id,
+      clientId: session.clientId,
+      gameId: session.gameId,
+      startTime: session.startTime instanceof Date ? session.startTime.toISOString() : session.startTime,
+      endTime: session.endTime ? (session.endTime instanceof Date ? session.endTime.toISOString() : session.endTime) : undefined,
+      isActive: session.isActive,
+      durationSeconds: session.durationSeconds,
+      user: sessionUser ? {
+        id: sessionUser.id,
+        name: sessionUser.name,
+        clientId: sessionUser.clientId,
+        role: sessionUser.role,
+        avatar: sessionUser.avatar
+      } : null
+    };
+  }
+
+  // Helper function to convert array of sessions with user information
+  private async convertToEventDataArrayWithUsers(sessions: any[]): Promise<GameSessionEventData[]> {
+    return Promise.all(sessions.map(session => this.convertToEventDataWithUser(session)));
+  }
   // Start a new game session
   async startSession(req: Request, res: Response) {
     try {
@@ -44,10 +71,10 @@ export default class GameSessionApiController extends PageController {
       if (session) {
         GameSessionEvents.sessionStarted(this.convertToEventData(session));
         
-        // Update active sessions count
+        // Update active sessions with user data
         const activeSessions = await GameSessionModel.getAllActiveSessions();
-        GameSessionEvents.activeSessionsUpdated(this.convertToEventDataArray(activeSessions));
-        GameSessionEvents.activeSessionsCountUpdated(activeSessions.length);
+        const activeSessionsWithUsers = await this.convertToEventDataArrayWithUsers(activeSessions);
+        GameSessionEvents.activeSessionsUpdated(activeSessionsWithUsers);
       }
       
       res.status(201).json({
@@ -85,10 +112,10 @@ export default class GameSessionApiController extends PageController {
         }));
       }
       
-      // Update active sessions count
+      // Update active sessions with user data
       const activeSessions = await GameSessionModel.getAllActiveSessions();
-      GameSessionEvents.activeSessionsUpdated(this.convertToEventDataArray(activeSessions));
-      GameSessionEvents.activeSessionsCountUpdated(activeSessions.length);
+      const activeSessionsWithUsers = await this.convertToEventDataArrayWithUsers(activeSessions);
+      GameSessionEvents.activeSessionsUpdated(activeSessionsWithUsers);
       
       res.json({
         message: 'Game session stopped successfully'
@@ -121,10 +148,10 @@ export default class GameSessionApiController extends PageController {
         GameSessionEvents.clientSessionsStopped(clientId, sessionIds);
       }
       
-      // Update active sessions count
+      // Update active sessions with user data
       const activeSessions = await GameSessionModel.getAllActiveSessions();
-      GameSessionEvents.activeSessionsUpdated(this.convertToEventDataArray(activeSessions));
-      GameSessionEvents.activeSessionsCountUpdated(activeSessions.length);
+      const activeSessionsWithUsers = await this.convertToEventDataArrayWithUsers(activeSessions);
+      GameSessionEvents.activeSessionsUpdated(activeSessionsWithUsers);
       
       res.json({
         message: 'Active sessions stopped for client'
@@ -291,10 +318,10 @@ export default class GameSessionApiController extends PageController {
       if (session && session.isActive === 1) {
         GameSessionEvents.sessionStarted(this.convertToEventData(session));
         
-        // Update active sessions count
+        // Update active sessions with user data
         const activeSessions = await GameSessionModel.getAllActiveSessions();
-        GameSessionEvents.activeSessionsUpdated(this.convertToEventDataArray(activeSessions));
-        GameSessionEvents.activeSessionsCountUpdated(activeSessions.length);
+        const activeSessionsWithUsers = await this.convertToEventDataArrayWithUsers(activeSessions);
+        GameSessionEvents.activeSessionsUpdated(activeSessionsWithUsers);
       }
       
       res.status(201).json({
@@ -373,10 +400,10 @@ export default class GameSessionApiController extends PageController {
       if (updatedSession) {
         GameSessionEvents.sessionUpdated(this.convertToEventData(updatedSession));
         
-        // Update active sessions if the session's active status changed
+        // Update active sessions with user data if the session's active status changed
         const activeSessions = await GameSessionModel.getAllActiveSessions();
-        GameSessionEvents.activeSessionsUpdated(this.convertToEventDataArray(activeSessions));
-        GameSessionEvents.activeSessionsCountUpdated(activeSessions.length);
+        const activeSessionsWithUsers = await this.convertToEventDataArrayWithUsers(activeSessions);
+        GameSessionEvents.activeSessionsUpdated(activeSessionsWithUsers);
       }
       
       res.json({
@@ -411,10 +438,10 @@ export default class GameSessionApiController extends PageController {
       // Emit WebSocket event for real-time updates
       GameSessionEvents.sessionDeleted(parseInt(sessionId));
       
-      // Update active sessions count
+      // Update active sessions with user data
       const activeSessions = await GameSessionModel.getAllActiveSessions();
-      GameSessionEvents.activeSessionsUpdated(this.convertToEventDataArray(activeSessions));
-      GameSessionEvents.activeSessionsCountUpdated(activeSessions.length);
+      const activeSessionsWithUsers = await this.convertToEventDataArrayWithUsers(activeSessions);
+      GameSessionEvents.activeSessionsUpdated(activeSessionsWithUsers);
       
       res.json({
         message: 'Game session deleted successfully'
