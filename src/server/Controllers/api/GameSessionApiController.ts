@@ -20,7 +20,8 @@ export default class GameSessionApiController extends PageController {
       startTime: session.startTime instanceof Date ? session.startTime.toISOString() : session.startTime,
       endTime: session.endTime ? (session.endTime instanceof Date ? session.endTime.toISOString() : session.endTime) : undefined,
       isActive: session.isActive,
-      durationSeconds: session.durationSeconds
+      durationSeconds: session.durationSeconds,
+      user: session.user || null
     };
   }
 
