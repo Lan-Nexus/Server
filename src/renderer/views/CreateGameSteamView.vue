@@ -54,7 +54,7 @@ async function handleAddGame(game: any) {
         <div class="card-body">
           <div class="flex items-center gap-3">
             <div class="p-2 bg-accent/10 rounded-lg">
-              <i class="fas fa-steam text-accent text-xl"></i>
+              <i class="fab fa-steam text-accent text-xl"></i>
             </div>
             <div>
               <h3 class="text-lg font-semibold">Import from Steam</h3>
