@@ -7,6 +7,7 @@ import GameKeyPageController from '../Controllers/api/GameKeyApiController.js';
 import gameEventsController from '../Controllers/api/GameEventsApiController.js';
 import UsersController from '../Controllers/api/UsersApiController.js';
 import CalendarApiController from '../Controllers/api/CalendarApiController.js';
+import GameSessionApiController from '../Controllers/api/GameSessionApiController.js';
 import Router from './Router.js';
 import multer from 'multer';
 import path from 'path';
@@ -226,6 +227,25 @@ new Router<gameEventsController>({
     permission: "events:update",
   })
   .delete({ path: "/:id", handler: "delete", permission: "events:delete" });
+
+// Game Sessions API endpoints
+new Router<GameSessionApiController>({
+  router: authenticatedRouter,
+  controller: GameSessionApiController,
+  prefix: "/game-sessions",
+})
+  .post({ handler: "startSession", permission: "game-sessions:start" })
+  .post({ path: "/:sessionId/stop", handler: "stopSession", permission: "game-sessions:stop" })
+  .post({ path: "/client/:clientId/stop", handler: "stopClientSession", permission: "game-sessions:stop" })
+  .get({ path: "/client/:clientId/active", handler: "getActiveSession", permission: "game-sessions:read" })
+  .get({ path: "/client/:clientId", handler: "getClientSessions", permission: "game-sessions:read" })
+  .get({ path: "/game/:gameId", handler: "getGameSessions", permission: "game-sessions:read" })
+  .get({ path: "/active", handler: "getAllActiveSessions", permission: "game-sessions:read" })
+  .get({ handler: "getAllSessions", permission: "game-sessions:read" })
+  .get({ path: "/:sessionId", handler: "getSession", permission: "game-sessions:read" })
+  .post({ path: "/create", handler: "createSession", permission: "game-sessions:create" })
+  .put({ path: "/:sessionId", handler: "updateSession", permission: "game-sessions:update" })
+  .delete({ path: "/:sessionId", handler: "deleteSession", permission: "game-sessions:delete" });
 
 // Calendar API endpoints
 const calendarControllerInstance = new CalendarApiController();

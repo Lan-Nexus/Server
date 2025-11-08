@@ -5,12 +5,27 @@ import { useAuthStore } from "@/stores/auth";
 import UserAvatar from "@/components/common/UserAvatar.vue";
 import logo from "@/assets/logo.svg";
 import logoWhite from "@/assets/logo-white.svg";
-import { ref } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
+import { useFullscreenStore } from "@/stores/fullscreen";
 
 const notificationStore = useNotificationStore();
 const authStore = useAuthStore();
+const fullscreenStore = useFullscreenStore();
 
 const isHovered = ref(false);
+
+// Initialize fullscreen listeners immediately and on mount
+fullscreenStore.initializeListeners();
+
+onMounted(() => {
+  // Double-check listeners are set up
+  fullscreenStore.initializeListeners();
+  console.log('App mounted, fullscreen listeners initialized');
+});
+
+onUnmounted(() => {
+  fullscreenStore.removeListeners();
+});
 
 // Function to get notification border colors
 function getNotificationBorderColor(type: string): string {
@@ -30,6 +45,7 @@ function getNotificationBorderColor(type: string): string {
   >
     <!-- Enhanced Navbar -->
     <nav
+      v-show="!fullscreenStore.isFullscreen"
       class="navbar sticky top-0 z-50 bg-base-100/95 backdrop-blur-md border-b border-base-300/20 shadow-lg"
     >
       <div class="flex-1">
@@ -49,6 +65,42 @@ function getNotificationBorderColor(type: string): string {
 
       <div class="flex-none">
         <ul class="menu menu-horizontal px-1 gap-2">
+          <!-- Dashboard Link -->
+          <li>
+            <router-link
+              :to="{ name: 'dashboard' }"
+              class="btn btn-ghost gap-2 hover:bg-accent/10 hover:text-accent transition-all duration-200"
+              active-class="bg-accent/20 text-accent"
+            >
+              <i class="fas fa-tv"></i>
+              <span class="hidden sm:inline">Dashboard</span>
+            </router-link>
+          </li>
+
+          <!-- Games Link -->
+          <li>
+            <router-link
+              :to="{ name: 'games' }"
+              class="btn btn-ghost gap-2 hover:bg-primary/10 hover:text-primary transition-all duration-200"
+              active-class="bg-primary/20 text-primary"
+            >
+              <i class="fas fa-gamepad"></i>
+              <span class="hidden sm:inline">Games</span>
+            </router-link>
+          </li>
+
+          <!-- Game Sessions Link -->
+          <li>
+            <router-link
+              :to="{ name: 'gameSessions' }"
+              class="btn btn-ghost gap-2 hover:bg-warning/10 hover:text-warning transition-all duration-200"
+              active-class="bg-warning/20 text-warning"
+            >
+              <i class="fas fa-clock"></i>
+              <span class="hidden sm:inline">Sessions</span>
+            </router-link>
+          </li>
+
           <!-- Users Link -->
           <li>
             <router-link
@@ -73,66 +125,19 @@ function getNotificationBorderColor(type: string): string {
             </router-link>
           </li>
 
-          <!-- Create Game Dropdown -->
-          <li>
-            <details class="dropdown dropdown-end">
-              <summary
-                class="btn btn-ghost gap-2 hover:bg-primary/10 hover:text-primary transition-all duration-200"
-              >
-                <i class="fas fa-plus"></i>
-                <span class="hidden sm:inline">Create Game</span>
-              </summary>
-              <ul
-                class="dropdown-content menu bg-base-100/95 backdrop-blur-sm border border-base-300/20 rounded-xl shadow-2xl w-56 p-2 mt-2 gap-1"
-              >
-                <li>
-                  <router-link
-                    :to="{ name: 'findGame' }"
-                    class="flex items-center gap-3 p-3 hover:bg-info/10 hover:text-info rounded-lg transition-all duration-200"
-                  >
-                    <div class="p-1 bg-info/10 rounded-lg">
-                      <i class="fas fa-search text-info"></i>
-                    </div>
-                    <div>
-                      <div class="font-semibold">Find Game</div>
-                      <div class="text-xs opacity-60">
-                        Search existing games
-                      </div>
-                    </div>
-                  </router-link>
-                </li>
-                <li>
-                  <router-link
-                    :to="{ name: 'createGameSteam' }"
-                    class="flex items-center gap-3 p-3 hover:bg-accent/10 hover:text-accent rounded-lg transition-all duration-200"
-                  >
-                    <div class="p-1 bg-accent/10 rounded-lg">
-                      <i class="fab fa-steam text-accent"></i>
-                    </div>
-                    <div>
-                      <div class="font-semibold">From Steam</div>
-                      <div class="text-xs opacity-60">Import from Steam</div>
-                    </div>
-                  </router-link>
-                </li>
-                <li>
-                  <router-link
-                    :to="{ name: 'createGame' }"
-                    class="flex items-center gap-3 p-3 hover:bg-success/10 hover:text-success rounded-lg transition-all duration-200"
-                  >
-                    <div class="p-1 bg-success/10 rounded-lg">
-                      <i class="fas fa-plus text-success"></i>
-                    </div>
-                    <div>
-                      <div class="font-semibold">Create New</div>
-                      <div class="text-xs opacity-60">Create from scratch</div>
-                    </div>
-                  </router-link>
-                </li>
-              </ul>
-            </details>
-          </li>
+
         </ul>
+      </div>
+
+      <!-- Fullscreen Button -->
+      <div class="flex-none mr-2">
+        <button 
+          @click="fullscreenStore.toggleFullscreen"
+          class="btn btn-ghost btn-circle text-lg hover:bg-primary/10 hover:text-primary transition-all duration-200"
+          :title="fullscreenStore.isFullscreen ? 'Exit Fullscreen (ESC)' : 'Enter Fullscreen'"
+        >
+          <i class="fas" :class="fullscreenStore.isFullscreen ? 'fa-compress' : 'fa-expand'"></i>
+        </button>
       </div>
 
       <!-- User Info & Logout -->
