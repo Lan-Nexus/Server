@@ -47,82 +47,154 @@ const keys = ref([]);
 
     <!-- Game Details -->
     <template v-else>
-      <!-- Header Section -->
-      <div class="mb-8">
-        <div class="flex items-center gap-4 mb-6">
-          <button
-            @click="$router.go(-1)"
-            class="btn btn-circle btn-ghost hover:btn-primary transition-all duration-200"
-          >
-            <i class="fas fa-arrow-left"></i>
-          </button>
-          <h1
-            class="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent"
-          >
-            Game Details
-          </h1>
-        </div>
+      <!-- Back Button (Fixed Position) -->
+      <div class="mb-4">
+        <button
+          @click="$router.go(-1)"
+          class="btn btn-circle btn-ghost hover:btn-primary transition-all duration-200"
+        >
+          <i class="fas fa-arrow-left"></i>
+        </button>
       </div>
 
-      <!-- Game Hero Section -->
+      <!-- Game Hero Section with Parallax Layout -->
       <div
-        class="card bg-base-100/50 backdrop-blur-sm border border-base-300/20 shadow-xl mb-6"
+        class="card bg-base-100/50 backdrop-blur-sm border border-base-300/20 shadow-xl mb-6 overflow-hidden"
       >
-        <div class="card-body">
-          <!-- Game Header -->
-          <div
-            class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-6"
-          >
-            <div class="flex items-center gap-4">
-              <div class="avatar">
-                <div
-                  class="w-20 h-20 rounded-xl ring-4 ring-primary/30 shadow-lg"
-                >
-                  <img
-                    :src="game.icon"
-                    :alt="`${game.name} icon`"
-                    class="object-cover"
-                  />
-                </div>
-              </div>
-              <div>
-                <h2 class="text-3xl font-bold text-base-content mb-1">
-                  {{ game.name }}
-                </h2>
-                <div class="flex flex-wrap gap-2">
-                  <div class="badge badge-primary badge-lg">
-                    <i class="fas fa-hashtag mr-1"></i>
-                    ID: {{ game.id }}
-                  </div>
-                  <div class="badge badge-secondary" v-if="game.status">
-                    {{ game.status }}
-                  </div>
-                  <div class="badge badge-accent" v-if="game.type">
-                    {{ game.type }}
-                  </div>
-                </div>
-              </div>
-            </div>
+        <div class="card-body p-0">
+          <!-- Hero/Header Image (Large Background) -->
+          <div class="relative w-full">
+            <img
+              v-if="game.heroImage"
+              :src="game.heroImage"
+              :alt="`${game.name} hero`"
+              class="w-full h-80 object-cover"
+            />
+            <img
+              v-else-if="game.headerImage"
+              :src="game.headerImage"
+              :alt="`${game.name} header`"
+              class="w-full h-80 object-cover"
+            />
+            <div
+              v-else
+              class="w-full h-80 bg-gradient-to-br from-primary/20 to-secondary/20"
+            ></div>
+            <div
+              class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"
+            ></div>
 
-            <!-- Action Buttons -->
-            <div class="flex justify-center lg:justify-end">
-              <ActionButtons :showView="false" :game="game" class="scale-110" />
+            <!-- Logo Overlay (positioned like client) -->
+            <div class="absolute bottom-0 left-0 p-8 pb-4">
+              <img
+                v-if="game.logo"
+                :src="game.logo"
+                :alt="`${game.name} logo`"
+                class="max-h-32 max-w-md drop-shadow-2xl"
+              />
+              <h2
+                v-else
+                class="text-5xl font-bold text-white drop-shadow-[2px_2px_2px_rgba(0,0,0,1)]"
+              >
+                {{ game.name }}
+              </h2>
             </div>
           </div>
 
-          <!-- Header Image -->
-          <div
-            class="relative overflow-hidden rounded-xl shadow-2xl mb-6"
-            v-if="game.headerImage"
-          >
-            <img
-              :src="game.headerImage"
-              :alt="`${game.name} header`"
-              class="w-full h-64 object-cover"
-            />
+          <!-- Game Info Section -->
+          <div class="p-6">
+            <!-- Game Header Info -->
             <div
-              class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"
-            ></div>
+              class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-6"
+            >
+              <div class="flex items-center gap-4">
+                <div class="avatar">
+                  <div
+                    class="w-20 h-20 rounded-xl ring-4 ring-primary/30 shadow-lg"
+                  >
+                    <img
+                      :src="game.icon"
+                      :alt="`${game.name} icon`"
+                      class="object-cover"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <h3 class="text-2xl font-bold text-base-content mb-1">
+                    {{ game.name }}
+                  </h3>
+                  <div class="flex flex-wrap gap-2">
+                    <div class="badge badge-primary badge-lg">
+                      <i class="fas fa-hashtag mr-1"></i>
+                      ID: {{ game.id }}
+                    </div>
+                    <div class="badge badge-secondary" v-if="game.status">
+                      {{ game.status }}
+                    </div>
+                    <div class="badge badge-accent" v-if="game.type">
+                      {{ game.type }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Action Buttons -->
+              <div class="flex justify-center lg:justify-end">
+                <ActionButtons
+                  :showView="false"
+                  :game="game"
+                  class="scale-110"
+                />
+              </div>
+            </div>
+
+            <!-- Additional Images Gallery -->
+            <div
+              class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+              v-if="game.imageCard || game.headerImage || game.heroImage"
+            >
+              <div
+                class="relative overflow-hidden rounded-lg shadow-lg"
+                v-if="game.imageCard"
+              >
+                <img
+                  :src="game.imageCard"
+                  :alt="`${game.name} card`"
+                  class="w-full h-48 object-cover hover:scale-105 transition-transform duration-300"
+                />
+                <div class="absolute top-2 left-2 badge badge-sm badge-primary">
+                  Card Image
+                </div>
+              </div>
+              <div
+                class="relative overflow-hidden rounded-lg shadow-lg"
+                v-if="game.headerImage"
+              >
+                <img
+                  :src="game.headerImage"
+                  :alt="`${game.name} header`"
+                  class="w-full h-48 object-cover hover:scale-105 transition-transform duration-300"
+                />
+                <div
+                  class="absolute top-2 left-2 badge badge-sm badge-secondary"
+                >
+                  Header Image
+                </div>
+              </div>
+              <div
+                class="relative overflow-hidden rounded-lg shadow-lg"
+                v-if="game.heroImage"
+              >
+                <img
+                  :src="game.heroImage"
+                  :alt="`${game.name} hero`"
+                  class="w-full h-48 object-cover hover:scale-105 transition-transform duration-300"
+                />
+                <div class="absolute top-2 left-2 badge badge-sm badge-accent">
+                  Hero Image
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
