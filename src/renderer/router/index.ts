@@ -7,7 +7,7 @@ import GamesView from '@/views/GamesView.vue'
 import LoginView from '@/views/LoginView.vue'
 import SetupView from '@/views/SetupView.vue'
 import CreateGameSteamView from '@/views/CreateGameSteamView.vue'
-import CreateShortcutGameView from '@/views/CreateShortcutGameView.vue'
+import AddGameWithImagesView from '@/views/AddGameWithImagesView.vue'
 import FindGameView from '@/views/FindGameView.vue'
 import addGameView from '@/views/addGameView.vue'
 import EventsView from '@/views/EventsView.vue'
@@ -46,19 +46,19 @@ const router = createRouter({
       component: CreateGameView,
     },
     {
-      path: '/game/create-shortcut',
-      name: 'createShortcutGame',
-      component: CreateShortcutGameView,
-    },
-    {
-      path: '/game/view/:id',
-      name: 'viewGame',
-      component: ViewGameView,
+      path: '/game/add-with-images',
+      name: 'addGameWithImages',
+      component: AddGameWithImagesView,
     },
     {
       path: '/steam/',
       name: 'createGameSteam',
       component: CreateGameSteamView,
+    },
+    {
+      path: '/game/view/:id',
+      name: 'viewGame',
+      component: ViewGameView,
     },
     {
       path: '/game/edit/:id',

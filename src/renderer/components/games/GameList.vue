@@ -37,15 +37,15 @@ const gameCount = computed(() => gamesStore.games.length);
             >
               <li>
                 <router-link
-                  :to="{ name: 'findGame' }"
+                  :to="{ name: 'addGameWithImages' }"
                   class="flex items-center gap-3 p-3 hover:bg-info/10 hover:text-info rounded-lg transition-all duration-200"
                 >
                   <div class="p-1 bg-info/10 rounded-lg">
                     <i class="fas fa-search text-info"></i>
                   </div>
                   <div>
-                    <div class="font-semibold">Find Game</div>
-                    <div class="text-xs opacity-60">Search existing games</div>
+                    <div class="font-semibold">Add With Images</div>
+                    <div class="text-xs opacity-60">Search and pick images</div>
                   </div>
                 </router-link>
               </li>
@@ -58,7 +58,7 @@ const gameCount = computed(() => gamesStore.games.length);
                     <i class="fab fa-steam text-accent"></i>
                   </div>
                   <div>
-                    <div class="font-semibold">From Steam</div>
+                    <div class="font-semibold">Add From Steam</div>
                     <div class="text-xs opacity-60">Import from Steam</div>
                   </div>
                 </router-link>
@@ -73,23 +73,7 @@ const gameCount = computed(() => gamesStore.games.length);
                   </div>
                   <div>
                     <div class="font-semibold">Create New</div>
-                    <div class="text-xs opacity-60">Create from scratch</div>
-                  </div>
-                </router-link>
-              </li>
-              <li>
-                <router-link
-                  :to="{ name: 'createShortcutGame' }"
-                  class="flex items-center gap-3 p-3 hover:bg-warning/10 hover:text-warning rounded-lg transition-all duration-200"
-                >
-                  <div class="p-1 bg-warning/10 rounded-lg">
-                    <i class="fas fa-external-link-alt text-warning"></i>
-                  </div>
-                  <div>
-                    <div class="font-semibold">Create Shortcut</div>
-                    <div class="text-xs opacity-60">
-                      Quick launch existing game
-                    </div>
+                    <div class="text-xs opacity-60">Manual entry</div>
                   </div>
                 </router-link>
               </li>
