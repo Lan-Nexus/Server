@@ -137,10 +137,6 @@ class WebSocketManager {
       console.error('❌ WebSocket connection error:', error)
       console.error('Error details:', {
         message: error.message,
-        type: error.type,
-        transport: error.transport,
-        description: error.description,
-        context: error.context
       })
 
       // If this is a timeout error and we haven't tried direct connection yet
