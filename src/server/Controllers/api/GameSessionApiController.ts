@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import GameSessionModel from '../../Models/GameSession.js';
 import UserModel from '../../Models/User.js';
-import { gameSessionsInsertSchema, gameSessionsUpdateSchema, gameSessionsSelectSchema } from '../../db/schema.js';
+import { gameSessionsInsertSchema, gameSessionsUpdateSchema, gameSessionsSelectSchema, gameSessionsTable, usersTable } from '../../db/schema.js';
 import { z } from 'zod';
 import { PageController } from '../PageController.js';
 import { GameSessionEvents, type GameSessionEventData } from '../../websocket/gameSessionEvents.js';
@@ -11,8 +11,7 @@ export default class GameSessionApiController extends PageController {
     super(GameSessionModel, gameSessionsSelectSchema, gameSessionsInsertSchema, gameSessionsUpdateSchema);
   }
 
-  // Helper function to convert database session to WebSocket event data
-  private convertToEventData(session: any): GameSessionEventData {
+  private convertToEventData(session: typeof gameSessionsTable.$inferSelect & { user: typeof usersTable.$inferSelect }): GameSessionEventData {
     return {
       id: session.id,
       clientId: session.clientId,
@@ -20,9 +19,15 @@ export default class GameSessionApiController extends PageController {
       startTime: session.startTime instanceof Date ? session.startTime.toISOString() : session.startTime,
       endTime: session.endTime ? (session.endTime instanceof Date ? session.endTime.toISOString() : session.endTime) : undefined,
       isActive: session.isActive,
-      durationSeconds: session.durationSeconds
+      user: {
+        id: session.user.id,
+        name: session.user.name,
+        clientId: session.user.clientId,
+        role: session.user.role,
+        avatar: session.user.avatar,
+      }
     };
-  }
+  };
 
   // Helper function to convert array of sessions
   private convertToEventDataArray(sessions: any[]): GameSessionEventData[] {
@@ -40,13 +45,13 @@ export default class GameSessionApiController extends PageController {
       endTime: session.endTime ? (session.endTime instanceof Date ? session.endTime.toISOString() : session.endTime) : undefined,
       isActive: session.isActive,
       durationSeconds: session.durationSeconds,
-      user: sessionUser ? {
+      user: {
         id: sessionUser.id,
         name: sessionUser.name,
         clientId: sessionUser.clientId,
         role: sessionUser.role,
         avatar: sessionUser.avatar
-      } : null
+      }
     };
   }
 
@@ -58,25 +63,25 @@ export default class GameSessionApiController extends PageController {
   async startSession(req: Request, res: Response) {
     try {
       const { clientId, gameId } = req.body;
-      
+
       if (!clientId || !gameId) {
-        return res.status(400).json({ 
-          error: 'Missing required fields: clientId and gameId are required' 
+        return res.status(400).json({
+          error: 'Missing required fields: clientId and gameId are required'
         });
       }
 
       const session = await GameSessionModel.startSession(clientId, parseInt(gameId));
-      
+
       // Emit WebSocket event for real-time updates
       if (session) {
         GameSessionEvents.sessionStarted(this.convertToEventData(session));
-        
+
         // Update active sessions with user data
         const activeSessions = await GameSessionModel.getAllActiveSessions();
         const activeSessionsWithUsers = await this.convertToEventDataArrayWithUsers(activeSessions);
         GameSessionEvents.activeSessionsUpdated(activeSessionsWithUsers);
       }
-      
+
       res.status(201).json({
         message: 'Game session started successfully',
         session
@@ -91,32 +96,32 @@ export default class GameSessionApiController extends PageController {
   async stopSession(req: Request, res: Response) {
     try {
       const { sessionId } = req.params;
-      
+
       if (!sessionId) {
-        return res.status(400).json({ 
-          error: 'Session ID is required' 
+        return res.status(400).json({
+          error: 'Session ID is required'
         });
       }
 
       // Get session data before ending for WebSocket event
       const session = await GameSessionModel.readById(parseInt(sessionId));
-      
+
       await GameSessionModel.endSession(parseInt(sessionId));
-      
+
       // Emit WebSocket event for real-time updates
       if (session) {
         GameSessionEvents.sessionEnded(this.convertToEventData({
           ...session,
           isActive: 0,
-          endTime: new Date().toISOString()
+          endTime: new Date()
         }));
       }
-      
+
       // Update active sessions with user data
       const activeSessions = await GameSessionModel.getAllActiveSessions();
       const activeSessionsWithUsers = await this.convertToEventDataArrayWithUsers(activeSessions);
       GameSessionEvents.activeSessionsUpdated(activeSessionsWithUsers);
-      
+
       res.json({
         message: 'Game session stopped successfully'
       });
@@ -130,29 +135,29 @@ export default class GameSessionApiController extends PageController {
   async stopClientSession(req: Request, res: Response) {
     try {
       const { clientId } = req.params;
-      
+
       if (!clientId) {
-        return res.status(400).json({ 
-          error: 'Client ID is required' 
+        return res.status(400).json({
+          error: 'Client ID is required'
         });
       }
 
       // Get active sessions for client before ending for WebSocket event
       const activeSessionsForClient = await GameSessionModel.getActiveSessionsForClient(clientId);
       const sessionIds = activeSessionsForClient.map(s => s.id);
-      
+
       await GameSessionModel.endActiveSessionsForClient(clientId);
-      
+
       // Emit WebSocket event for real-time updates
       if (sessionIds.length > 0) {
         GameSessionEvents.clientSessionsStopped(clientId, sessionIds);
       }
-      
+
       // Update active sessions with user data
       const activeSessions = await GameSessionModel.getAllActiveSessions();
       const activeSessionsWithUsers = await this.convertToEventDataArrayWithUsers(activeSessions);
       GameSessionEvents.activeSessionsUpdated(activeSessionsWithUsers);
-      
+
       res.json({
         message: 'Active sessions stopped for client'
       });
@@ -166,18 +171,18 @@ export default class GameSessionApiController extends PageController {
   async getActiveSession(req: Request, res: Response) {
     try {
       const { clientId } = req.params;
-      
+
       if (!clientId) {
-        return res.status(400).json({ 
-          error: 'Client ID is required' 
+        return res.status(400).json({
+          error: 'Client ID is required'
         });
       }
 
       const session = await GameSessionModel.getActiveSessionForClient(clientId);
-      
+
       if (!session) {
-        return res.status(404).json({ 
-          message: 'No active session found for client' 
+        return res.status(404).json({
+          message: 'No active session found for client'
         });
       }
 
@@ -192,15 +197,15 @@ export default class GameSessionApiController extends PageController {
   async getClientSessions(req: Request, res: Response) {
     try {
       const { clientId } = req.params;
-      
+
       if (!clientId) {
-        return res.status(400).json({ 
-          error: 'Client ID is required' 
+        return res.status(400).json({
+          error: 'Client ID is required'
         });
       }
 
       const sessions = await GameSessionModel.getSessionsForClient(clientId);
-      
+
       res.json({ sessions });
     } catch (error) {
       console.error('Error getting client sessions:', error);
@@ -212,15 +217,15 @@ export default class GameSessionApiController extends PageController {
   async getGameSessions(req: Request, res: Response) {
     try {
       const { gameId } = req.params;
-      
+
       if (!gameId) {
-        return res.status(400).json({ 
-          error: 'Game ID is required' 
+        return res.status(400).json({
+          error: 'Game ID is required'
         });
       }
 
       const sessions = await GameSessionModel.getSessionsForGame(parseInt(gameId));
-      
+
       res.json({ sessions });
     } catch (error) {
       console.error('Error getting game sessions:', error);
@@ -232,7 +237,7 @@ export default class GameSessionApiController extends PageController {
   async getAllActiveSessions(req: Request, res: Response) {
     try {
       const sessions = await GameSessionModel.getAllActiveSessions();
-      
+
       res.json({ sessions });
     } catch (error) {
       console.error('Error getting active sessions:', error);
@@ -244,7 +249,7 @@ export default class GameSessionApiController extends PageController {
   async getAllSessions(req: Request, res: Response) {
     try {
       const sessions = await GameSessionModel.getAllSessions();
-      
+
       res.json({ sessions });
     } catch (error) {
       console.error('Error getting all sessions:', error);
@@ -256,25 +261,25 @@ export default class GameSessionApiController extends PageController {
   async getSession(req: Request, res: Response) {
     try {
       const { sessionId } = req.params;
-      
+
       if (!sessionId) {
-        return res.status(400).json({ 
-          error: 'Session ID is required' 
+        return res.status(400).json({
+          error: 'Session ID is required'
         });
       }
 
       const session = await GameSessionModel.readById(parseInt(sessionId));
-      
+
       if (!session) {
-        return res.status(404).json({ 
-          error: 'Session not found' 
+        return res.status(404).json({
+          error: 'Session not found'
         });
       }
 
       // Get session duration
       const duration = await GameSessionModel.getSessionDuration(parseInt(sessionId));
 
-      res.json({ 
+      res.json({
         session: {
           ...session,
           durationSeconds: duration
@@ -291,39 +296,39 @@ export default class GameSessionApiController extends PageController {
     try {
       // Robust preprocessing to handle empty endTime
       const processedBody = { ...req.body };
-      
+
       // Handle all possible empty/invalid endTime values
       if (!processedBody.endTime || processedBody.endTime === "" || processedBody.endTime === "null") {
         console.log('Removing empty/null/undefined endTime field');
         delete processedBody.endTime;
       }
-      
+
       // Also handle the case where endTime exists but is falsy
       if (processedBody.hasOwnProperty('endTime') && !processedBody.endTime) {
         delete processedBody.endTime;
       }
-      
+
       const validatedData = gameSessionsInsertSchema.parse(processedBody);
-      
+
       // Convert endTime string to Date if it exists and isn't already a Date
       const sessionData = {
         ...validatedData,
-        endTime: validatedData.endTime instanceof Date ? validatedData.endTime : 
-                 validatedData.endTime ? new Date(validatedData.endTime) : undefined
+        endTime: validatedData.endTime instanceof Date ? validatedData.endTime :
+          validatedData.endTime ? new Date(validatedData.endTime) : undefined
       };
-      
+
       const session = await GameSessionModel.create(sessionData);
-      
+
       // Emit WebSocket event for real-time updates
       if (session && session.isActive === 1) {
         GameSessionEvents.sessionStarted(this.convertToEventData(session));
-        
+
         // Update active sessions with user data
         const activeSessions = await GameSessionModel.getAllActiveSessions();
         const activeSessionsWithUsers = await this.convertToEventDataArrayWithUsers(activeSessions);
         GameSessionEvents.activeSessionsUpdated(activeSessionsWithUsers);
       }
-      
+
       res.status(201).json({
         message: 'Game session created successfully',
         session
@@ -332,12 +337,12 @@ export default class GameSessionApiController extends PageController {
       if (error instanceof z.ZodError) {
         console.error('Zod validation error:', error.errors);
         console.error('Zod error details:', JSON.stringify(error.errors, null, 2));
-        return res.status(400).json({ 
+        return res.status(400).json({
           error: 'Invalid input data',
-          details: error.errors 
+          details: error.errors
         });
       }
-      
+
       console.error('Error creating game session:', error);
       console.error('Error name:', error instanceof Error ? error.name : 'Unknown');
       console.error('Error message:', error instanceof Error ? error.message : String(error));
@@ -350,18 +355,18 @@ export default class GameSessionApiController extends PageController {
   // Override mapRequestBody to handle endTime preprocessing for all requests
   public mapRequestBody(body: any, req: Request, res: Response): any {
     const processedBody = { ...body };
-  
+
     // Handle all possible empty/invalid endTime values
     if (!processedBody.endTime || processedBody.endTime === "" || processedBody.endTime === "null") {
       console.log('mapRequestBody: Removing empty/null/undefined endTime field');
       delete processedBody.endTime;
     }
-  
+
     // Also handle the case where endTime exists but is falsy
     if (processedBody.hasOwnProperty('endTime') && !processedBody.endTime) {
       delete processedBody.endTime;
     }
-  
+
     return processedBody;
   }
 
@@ -369,10 +374,10 @@ export default class GameSessionApiController extends PageController {
   async updateSession(req: Request, res: Response) {
     try {
       const { sessionId } = req.params;
-      
+
       if (!sessionId) {
-        return res.status(400).json({ 
-          error: 'Session ID is required' 
+        return res.status(400).json({
+          error: 'Session ID is required'
         });
       }
 
@@ -383,40 +388,40 @@ export default class GameSessionApiController extends PageController {
       }
 
       const validatedData = gameSessionsUpdateSchema.parse(processedBody);
-      
+
       // Convert string dates to Date objects
       const updateData = {
         ...validatedData,
         startTime: validatedData.startTime ? new Date(validatedData.startTime) : undefined,
         endTime: validatedData.endTime ? new Date(validatedData.endTime) : undefined
       };
-      
+
       await GameSessionModel.update(parseInt(sessionId), updateData);
-      
+
       // Get updated session for WebSocket event
       const updatedSession = await GameSessionModel.readById(parseInt(sessionId));
-      
+
       // Emit WebSocket event for real-time updates
       if (updatedSession) {
         GameSessionEvents.sessionUpdated(this.convertToEventData(updatedSession));
-        
+
         // Update active sessions with user data if the session's active status changed
         const activeSessions = await GameSessionModel.getAllActiveSessions();
         const activeSessionsWithUsers = await this.convertToEventDataArrayWithUsers(activeSessions);
         GameSessionEvents.activeSessionsUpdated(activeSessionsWithUsers);
       }
-      
+
       res.json({
         message: 'Game session updated successfully'
       });
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ 
+        return res.status(400).json({
           error: 'Invalid input data',
-          details: error.errors 
+          details: error.errors
         });
       }
-      
+
       console.error('Error updating game session:', error);
       res.status(500).json({ error: 'Failed to update game session' });
     }
@@ -426,23 +431,23 @@ export default class GameSessionApiController extends PageController {
   async deleteSession(req: Request, res: Response) {
     try {
       const { sessionId } = req.params;
-      
+
       if (!sessionId) {
-        return res.status(400).json({ 
-          error: 'Session ID is required' 
+        return res.status(400).json({
+          error: 'Session ID is required'
         });
       }
 
       await GameSessionModel.delete(parseInt(sessionId));
-      
+
       // Emit WebSocket event for real-time updates
       GameSessionEvents.sessionDeleted(parseInt(sessionId));
-      
+
       // Update active sessions with user data
       const activeSessions = await GameSessionModel.getAllActiveSessions();
       const activeSessionsWithUsers = await this.convertToEventDataArrayWithUsers(activeSessions);
       GameSessionEvents.activeSessionsUpdated(activeSessionsWithUsers);
-      
+
       res.json({
         message: 'Game session deleted successfully'
       });

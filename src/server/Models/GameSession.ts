@@ -6,20 +6,28 @@ import { db } from '../db.js';
 export default class GameSessionModel extends Model {
   static async create(gameSession: typeof gameSessionsTable.$inferInsert) {
     const newGameSession = await db.insert(gameSessionsTable).values(gameSession).$returningId();
-    const item = await db.query.gameSessionsTable.findFirst({ 
-      where: (gameSessionsTable, { eq }) => eq(gameSessionsTable.id, newGameSession[0].id) 
+    const item = await db.query.gameSessionsTable.findFirst({
+      where: (gameSessionsTable, { eq }) => eq(gameSessionsTable.id, newGameSession[0].id),
+      with: {
+        user: true
+      }
     });
     return item;
   }
 
   static async read(id: typeof gameSessionsTable.$inferSelect.id) {
-    return db.query.gameSessionsTable.findFirst({ 
-      where: (gameSessionsTable, { eq }) => eq(gameSessionsTable.id, id) 
+    return db.query.gameSessionsTable.findFirst({
+      where: (gameSessionsTable, { eq }) => eq(gameSessionsTable.id, id)
     });
   }
 
   static async readById(id: number) {
-    return db.select().from(gameSessionsTable).where(eq(gameSessionsTable.id, id)).then(rows => rows[0]);
+    return db.query.gameSessionsTable.findFirst({
+      where: (gameSessionsTable, { eq }) => eq(gameSessionsTable.id, id),
+      with: {
+        user: true
+      }
+    });
   }
 
   static async update(id: typeof gameSessionsTable.$inferSelect.id, gameSession: Partial<typeof gameSessionsTable.$inferSelect>) {
@@ -33,14 +41,14 @@ export default class GameSessionModel extends Model {
   static async startSession(clientId: string, gameId: number) {
     // End any existing active sessions for this client
     await this.endActiveSessionsForClient(clientId);
-    
+
     const newSession = await this.create({
       clientId,
       gameId,
       startTime: new Date(),
       isActive: 1
     });
-    
+
     return newSession;
   }
 
@@ -53,9 +61,9 @@ export default class GameSessionModel extends Model {
 
   static async endActiveSessionsForClient(clientId: string) {
     return db.update(gameSessionsTable)
-      .set({ 
+      .set({
         endTime: new Date(),
-        isActive: 0 
+        isActive: 0
       })
       .where(and(
         eq(gameSessionsTable.clientId, clientId),
@@ -113,10 +121,10 @@ export default class GameSessionModel extends Model {
   static async getSessionDuration(sessionId: number) {
     const session = await this.readById(sessionId);
     if (!session) return null;
-    
+
     const startTime = new Date(session.startTime);
     const endTime = session.endTime ? new Date(session.endTime) : new Date();
-    
+
     return Math.floor((endTime.getTime() - startTime.getTime()) / 1000); // Duration in seconds
   }
 }
