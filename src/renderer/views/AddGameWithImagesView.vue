@@ -400,8 +400,7 @@ async function createShortcut() {
         <div
           v-for="game in searchResults"
           :key="game.id"
-          @click="selectGame(game)"
-          class="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-200 cursor-pointer border-2 border-base-300 hover:border-primary"
+          class="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-200 border-2 border-base-300 hover:border-primary relative"
         >
           <figure v-if="game.image" class="px-4 pt-4">
             <img
@@ -410,14 +409,15 @@ async function createShortcut() {
               class="rounded-xl h-32 w-full object-cover"
             />
           </figure>
-          <div class="card-body" :class="{ 'pt-6': !game.image }">
+          <div class="card-body pb-16" :class="{ 'pt-6': !game.image }">
             <h3 class="card-title text-lg">{{ game.name }}</h3>
-            <div class="card-actions justify-end mt-2">
-              <button class="btn btn-primary btn-sm">
-                Select <i class="fas fa-arrow-right ml-1"></i>
-              </button>
-            </div>
           </div>
+          <button
+            @click="selectGame(game)"
+            class="btn btn-primary btn-sm absolute bottom-4 right-4 shadow-lg"
+          >
+            Select <i class="fas fa-arrow-right ml-1"></i>
+          </button>
         </div>
       </div>
 
