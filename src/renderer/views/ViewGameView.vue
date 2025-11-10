@@ -101,7 +101,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-base-100 to-base-200">
+  <div class="bg-gradient-to-br from-base-100 to-base-200">
     <!-- Game Not Found State -->
     <template v-if="!game">
       <div
@@ -351,10 +351,14 @@ onUnmounted(() => {
 /* Parallax Container */
 .parallax {
   perspective: 1px;
-  height: 100vh;
+  height: calc(100vh - 5rem); /* Subtract navbar height */
+  width: 100vw;
   overflow-x: hidden;
   overflow-y: auto;
   scroll-behavior: smooth;
+  position: fixed;
+  top: 5rem; /* Position below navbar */
+  left: 0;
 }
 
 .parallax__layer {
@@ -363,6 +367,11 @@ onUnmounted(() => {
   right: 0;
   bottom: 0;
   left: 0;
+  pointer-events: none;
+}
+
+.parallax__layer * {
+  pointer-events: auto;
 }
 
 .parallax__layer--base {
@@ -386,7 +395,8 @@ onUnmounted(() => {
 /* Content container positioning */
 .content-container {
   margin-top: 32%;
-  min-height: 100vh;
+  min-height: calc(100vh - 32%);
+  position: relative;
 }
 
 /* Glass morphism effect */
