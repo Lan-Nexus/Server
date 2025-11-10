@@ -38,14 +38,13 @@ const gameCount = computed(() => gamesStore.games.length);
               <li>
                 <router-link
                   :to="{ name: 'addGameWithImages' }"
-                  class="flex items-center gap-3 p-3 hover:bg-info/10 hover:text-info rounded-lg transition-all duration-200"
+                  class="flex items-center gap-3 p-3 hover:bg-success/10 hover:text-success rounded-lg transition-all duration-200"
                 >
-                  <div class="p-1 bg-info/10 rounded-lg">
-                    <i class="fas fa-search text-info"></i>
+                  <div class="p-1 bg-success/10 rounded-lg">
+                    <i class="fas fa-plus text-success"></i>
                   </div>
                   <div>
-                    <div class="font-semibold">Add With Images</div>
-                    <div class="text-xs opacity-60">Search and pick images</div>
+                    <div class="font-semibold">Create New Game</div>
                   </div>
                 </router-link>
               </li>
@@ -60,20 +59,6 @@ const gameCount = computed(() => gamesStore.games.length);
                   <div>
                     <div class="font-semibold">Add From Steam</div>
                     <div class="text-xs opacity-60">Import from Steam</div>
-                  </div>
-                </router-link>
-              </li>
-              <li>
-                <router-link
-                  :to="{ name: 'createGame' }"
-                  class="flex items-center gap-3 p-3 hover:bg-success/10 hover:text-success rounded-lg transition-all duration-200"
-                >
-                  <div class="p-1 bg-success/10 rounded-lg">
-                    <i class="fas fa-plus text-success"></i>
-                  </div>
-                  <div>
-                    <div class="font-semibold">Create New</div>
-                    <div class="text-xs opacity-60">Manual entry</div>
                   </div>
                 </router-link>
               </li>

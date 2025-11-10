@@ -2,11 +2,21 @@
 import GameForm from "@/components/gameForm/GameForm.vue";
 import router from "@/router";
 import { useGamesStore, type postGameType } from "@/stores/games";
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
+import { useRoute } from "vue-router";
 
+const route = useRoute();
 const gamesStore = useGamesStore();
 const gameType = ref<string>("");
 const showForm = ref(false);
+
+// Check if type was passed via route params
+onMounted(() => {
+  if (route.params.type && typeof route.params.type === "string") {
+    gameType.value = route.params.type;
+    showForm.value = true;
+  }
+});
 
 function selectGameType(type: string) {
   gameType.value = type;
@@ -125,47 +135,6 @@ function createGame(game: postGameType) {
         <!-- Form (shown after type selection) -->
         <div v-else>
           <!-- Form Header -->
-          <div
-            class="flex items-center gap-3 mb-6 pb-4 border-b border-base-300/20"
-          >
-            <button
-              @click="
-                showForm = false;
-                gameType = '';
-              "
-              class="btn btn-ghost btn-sm btn-circle"
-            >
-              <i class="fas fa-arrow-left"></i>
-            </button>
-            <div
-              class="p-3 rounded-xl"
-              :class="{
-                'bg-success/10': gameType === 'archive',
-                'bg-warning/10': gameType === 'shortcut',
-              }"
-            >
-              <i
-                class="text-xl"
-                :class="{
-                  'fas fa-download text-success': gameType === 'archive',
-                  'fas fa-external-link-alt text-warning':
-                    gameType === 'shortcut',
-                }"
-              ></i>
-            </div>
-            <div>
-              <h3 class="text-xl font-semibold">
-                {{
-                  gameType === "archive"
-                    ? "Downloadable Game Configuration"
-                    : "Shortcut Configuration"
-                }}
-              </h3>
-              <p class="text-base-content/60 text-sm">
-                Configure your {{ gameType }} game settings
-              </p>
-            </div>
-          </div>
 
           <!-- Progress Bar -->
           <div class="mb-6" v-if="gamesStore.isProcessing">

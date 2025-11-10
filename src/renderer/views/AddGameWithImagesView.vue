@@ -98,7 +98,10 @@ async function selectGame(game: any) {
 
 // Skip to manual entry
 function skipToManual() {
-  currentStep.value = 3;
+  router.push({
+    name: "createGame",
+    params: { type: gameType.value },
+  });
 }
 
 // Image step navigation
