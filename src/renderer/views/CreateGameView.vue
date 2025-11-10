@@ -41,6 +41,7 @@ function createGame(game: postGameType) {
       play: game.play,
       type: game.type,
       status: game.status,
+      archives: game.archives,
       keys: game.keys,
     })
     .then(() => {

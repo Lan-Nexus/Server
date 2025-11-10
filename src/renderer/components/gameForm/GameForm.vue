@@ -79,8 +79,8 @@ const archivePath = ref<string>(
     <p class="label"></p>
   </fieldset>
 
-  <fieldset class="fieldset">
-    <legend class="fieldset-legend">Executable</legend>
+  <fieldset class="fieldset" v-if="type === 'shortcut'">
+    <legend class="fieldset-legend">Executable Path</legend>
     <input
       type="text"
       v-model="executable"
@@ -88,19 +88,37 @@ const archivePath = ref<string>(
       placeholder="e.g. C:\Program Files\Game\game.exe"
     />
     <p class="label"></p>
-    <template v-if="type === 'shortcut'">
-      <div class="alert alert-info mt-2">
-        <i class="fas fa-info-circle"></i>
-        <div class="text-sm">
-          <strong>Provide the full path to the executable</strong><br />
-          Example: C:\Program Files\Game\game.exe<br />
-          <small class="opacity-70"
-            >The system will automatically track when this game is
-            running.</small
-          >
-        </div>
+    <div class="alert alert-info mt-2">
+      <i class="fas fa-info-circle"></i>
+      <div class="text-sm">
+        <strong>Provide the full path to the executable</strong><br />
+        Example: C:\Program Files\Game\game.exe<br />
+        <small class="opacity-70"
+          >The system will automatically track when this game is running.</small
+        >
       </div>
-    </template>
+    </div>
+  </fieldset>
+
+  <fieldset class="fieldset" v-if="type === 'archive'">
+    <legend class="fieldset-legend">Executable Name</legend>
+    <input
+      type="text"
+      v-model="executable"
+      class="input input-bordered w-full"
+      placeholder="e.g. game.exe"
+    />
+    <p class="label"></p>
+    <div class="alert alert-info mt-2">
+      <i class="fas fa-info-circle"></i>
+      <div class="text-sm">
+        <strong>Provide the executable filename</strong><br />
+        Example: game.exe<br />
+        <small class="opacity-70"
+          >The name of the .exe file within the game archive.</small
+        >
+      </div>
+    </div>
   </fieldset>
 
   <fieldset class="fieldset">

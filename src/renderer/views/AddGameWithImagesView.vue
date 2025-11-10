@@ -3,6 +3,7 @@ import { ref, watch, computed } from "vue";
 import api from "../utls/api";
 import { useRouter } from "vue-router";
 import StepImageGrid from "../components/StepImageGrid.vue";
+import FileUpload from "../components/gameForm/FileUpload.vue";
 import { useGamesStore } from "../stores/games";
 
 const router = useRouter();
@@ -38,6 +39,9 @@ const formData = ref({
   executable: "",
   description: "",
 });
+
+// Archive file for downloadable games
+const archiveFile = ref<File | null>(null);
 
 // Processing state
 const isProcessing = ref(false);
@@ -131,7 +135,7 @@ function goBackToImages() {
 const isFormValid = computed(() => {
   const baseValid = formData.value.gameID && formData.value.name;
   if (gameType.value === "archive") {
-    return baseValid; // Archive doesn't need executable path
+    return baseValid && archiveFile.value !== null; // Require archive file for downloadable games
   }
   return baseValid && formData.value.executable;
 });
@@ -145,13 +149,6 @@ const hasSelectedImages = computed(() => {
     selectedCard.value
   );
 });
-
-// Download image from URL
-async function downloadImage(url: string, filename: string): Promise<Blob> {
-  const response = await fetch(url);
-  const blob = await response.blob();
-  return blob;
-}
 
 // Create game (renamed from createShortcut to be more generic)
 async function createShortcut() {
@@ -184,49 +181,49 @@ async function createShortcut() {
       formDataToSend.append("play", "await run(GAME_EXECUTABLE);");
     }
 
-    // Download and add images if selected
+    // Download and add images if selected (send URLs, server will download them)
     let progress = 10;
     uploadProgress.value = progress;
 
     if (selectedIcon.value?.url) {
-      const iconBlob = await downloadImage(selectedIcon.value.url, "icon.jpg");
-      formDataToSend.append("icon", iconBlob, "icon.jpg");
+      formDataToSend.append("icon", selectedIcon.value.url);
       progress += 15;
       uploadProgress.value = progress;
     }
 
     if (selectedLogo.value?.url) {
-      const logoBlob = await downloadImage(selectedLogo.value.url, "logo.jpg");
-      formDataToSend.append("logo", logoBlob, "logo.jpg");
+      formDataToSend.append("logo", selectedLogo.value.url);
       progress += 15;
       uploadProgress.value = progress;
     }
 
     if (selectedHero.value?.url) {
-      const heroBlob = await downloadImage(selectedHero.value.url, "hero.jpg");
-      formDataToSend.append("heroImage", heroBlob, "hero.jpg");
+      formDataToSend.append("heroImage", selectedHero.value.url);
       progress += 15;
       uploadProgress.value = progress;
     }
 
     if (selectedGrid.value?.url) {
-      const gridBlob = await downloadImage(selectedGrid.value.url, "grid.jpg");
-      formDataToSend.append("headerImage", gridBlob, "grid.jpg");
+      formDataToSend.append("headerImage", selectedGrid.value.url);
       progress += 15;
       uploadProgress.value = progress;
     }
 
     if (selectedCard.value?.url) {
-      const cardBlob = await downloadImage(selectedCard.value.url, "card.jpg");
-      formDataToSend.append("imageCard", cardBlob, "card.jpg");
+      formDataToSend.append("imageCard", selectedCard.value.url);
       progress += 15;
       uploadProgress.value = progress;
     }
 
     uploadProgress.value = 75;
 
+    // Add archive file if present (for downloadable games)
+    if (gameType.value === "archive" && archiveFile.value) {
+      formDataToSend.append("archives", archiveFile.value);
+    }
+
     // Create the game
-    await api.post("/api/games/create", formDataToSend, {
+    await api.post("/api/games", formDataToSend, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
@@ -243,9 +240,13 @@ async function createShortcut() {
     // Refresh games list and navigate
     await gamesStore.getGames();
     router.push({ name: "home" });
-  } catch (error) {
-    console.error("Error creating shortcut:", error);
-    alert("Failed to create shortcut. Please try again.");
+  } catch (error: any) {
+    console.error("Error creating game:", error);
+    const errorMessage =
+      error.response?.data?.message ||
+      error.message ||
+      "Unknown error occurred";
+    alert(`Failed to create game. ${errorMessage}`);
   } finally {
     isProcessing.value = false;
     uploadProgress.value = 0;
@@ -691,6 +692,26 @@ async function createShortcut() {
               </div>
             </fieldset>
 
+            <fieldset class="fieldset" v-if="gameType === 'archive'">
+              <legend class="fieldset-legend">Executable Name</legend>
+              <input
+                type="text"
+                v-model="formData.executable"
+                class="input input-bordered w-full"
+                placeholder="e.g. game.exe"
+              />
+              <div class="alert alert-info mt-2">
+                <i class="fas fa-info-circle"></i>
+                <div class="text-sm">
+                  <strong>Provide the executable filename</strong><br />
+                  Example: game.exe<br />
+                  <small class="opacity-70"
+                    >The name of the .exe file within the game archive.</small
+                  >
+                </div>
+              </div>
+            </fieldset>
+
             <fieldset class="fieldset">
               <legend class="fieldset-legend">Description (Optional)</legend>
               <textarea
@@ -699,6 +720,23 @@ async function createShortcut() {
                 rows="4"
                 placeholder="Add a description for this game..."
               ></textarea>
+            </fieldset>
+
+            <!-- Archive Upload for Downloadable Games -->
+            <fieldset class="fieldset" v-if="gameType === 'archive'">
+              <legend class="fieldset-legend">Game Archive</legend>
+              <FileUpload v-model="archiveFile" />
+              <div class="alert alert-info mt-2">
+                <i class="fas fa-info-circle"></i>
+                <div class="text-sm">
+                  <strong>Upload a game archive file</strong><br />
+                  Supported formats: .zip<br />
+                  <small class="opacity-70"
+                    >Upload the game files that will be installed on the
+                    client.</small
+                  >
+                </div>
+              </div>
             </fieldset>
 
             <!-- Show selected images preview -->
