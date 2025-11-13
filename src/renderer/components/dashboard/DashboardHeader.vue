@@ -2,34 +2,45 @@
   <div class="flex items-center justify-between mb-6">
     <div class="flex items-center gap-3">
       <img
+        v-if="isFullscreen"
         src="@/assets/logo.svg"
         alt="Lan Nexus Logo"
-        class="h-12 opacity-80"
+        class="h-16 opacity-80"
       />
     </div>
-    
+
     <div class="flex items-center gap-4">
       <!-- WebSocket Status and Controls -->
       <div class="flex items-center gap-2">
         <div class="flex items-center gap-2 text-sm text-base-content/60">
-          <div 
+          <div
             class="w-2 h-2 rounded-full"
-            :class="isWebSocketConnected ? 'bg-success animate-pulse' : 'bg-warning'"
+            :class="
+              isWebSocketConnected ? 'bg-success animate-pulse' : 'bg-warning'
+            "
           ></div>
-          <span>{{ isWebSocketConnected ? 'LIVE' : 'POLLING' }}</span>
+          <span>{{ isWebSocketConnected ? "LIVE" : "POLLING" }}</span>
           <span class="mx-2">•</span>
           <span>{{ countdown }}s</span>
         </div>
-        
+
         <!-- WebSocket Toggle -->
         <button
           @click="onToggleWebSocket"
           class="btn btn-xs btn-ghost tooltip"
-          :data-tip="isWebSocketEnabled ? 'Disable WebSocket' : 'Enable WebSocket'"
+          :data-tip="
+            isWebSocketEnabled ? 'Disable WebSocket' : 'Enable WebSocket'
+          "
         >
-          <i :class="isWebSocketEnabled ? 'fas fa-bolt text-success' : 'fas fa-clock text-warning'"></i>
+          <i
+            :class="
+              isWebSocketEnabled
+                ? 'fas fa-bolt text-success'
+                : 'fas fa-clock text-warning'
+            "
+          ></i>
         </button>
-        
+
         <!-- Manual Refresh -->
         <button
           @click="onManualRefresh"
@@ -37,7 +48,10 @@
           data-tip="Manual Refresh"
           :disabled="isRefreshing"
         >
-          <i class="fas fa-sync-alt" :class="{ 'animate-spin': isRefreshing }"></i>
+          <i
+            class="fas fa-sync-alt"
+            :class="{ 'animate-spin': isRefreshing }"
+          ></i>
         </button>
       </div>
     </div>
@@ -45,20 +59,40 @@
 </template>
 
 <script setup lang="ts">
+import { ref, onMounted, onUnmounted } from "vue";
+
 interface Props {
-  countdown: number
-  isWebSocketConnected?: boolean
-  isWebSocketEnabled?: boolean
-  isRefreshing?: boolean
-  onToggleWebSocket?: () => void
-  onManualRefresh?: () => void
+  countdown: number;
+  isWebSocketConnected?: boolean;
+  isWebSocketEnabled?: boolean;
+  isRefreshing?: boolean;
+  onToggleWebSocket?: () => void;
+  onManualRefresh?: () => void;
 }
 
 withDefaults(defineProps<Props>(), {
   isWebSocketConnected: false,
   isWebSocketEnabled: true,
   isRefreshing: false,
-  onToggleWebSocket: () => { console.warn('DashboardHeader: onToggleWebSocket handler not provided'); },
-  onManualRefresh: () => { console.warn('DashboardHeader: onManualRefresh handler not provided'); }
-})
+  onToggleWebSocket: () => {
+    console.warn("DashboardHeader: onToggleWebSocket handler not provided");
+  },
+  onManualRefresh: () => {
+    console.warn("DashboardHeader: onManualRefresh handler not provided");
+  },
+});
+
+const isFullscreen = ref(false);
+
+function checkFullscreen() {
+  isFullscreen.value = !!document.fullscreenElement;
+}
+
+onMounted(() => {
+  document.addEventListener("fullscreenchange", checkFullscreen);
+  checkFullscreen();
+});
+onUnmounted(() => {
+  document.removeEventListener("fullscreenchange", checkFullscreen);
+});
 </script>
