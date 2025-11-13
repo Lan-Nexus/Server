@@ -57,6 +57,7 @@ export const gamesTable = mysqlTable("games", {
   play: mediumtext('play'), // Play script
   needsKey: int('needs_key').notNull().default(0), // 0 = no key needed, 1 = key needed
   executable: mediumtext('executable'), // Path to the executable file
+  executables: text('executables'), // JSON array of process names to monitor
   status: statusTypeEnum.default('Draft').notNull(),
 });
 
@@ -113,6 +114,24 @@ export const gamesInsertSchema = createInsertSchema(gamesTable, {
   install: gamesSelectSchema.shape.install.optional(),
   uninstall: gamesSelectSchema.shape.uninstall.optional(),
   play: gamesSelectSchema.shape.play.optional(),
+  executables: z.union([
+    z.string().transform((str, ctx) => {
+      if (!str || str.trim() === '') return null;
+      try {
+        const parsed = JSON.parse(str);
+        if (!Array.isArray(parsed)) {
+          ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Executables must be an array" });
+          return z.NEVER;
+        }
+        return str; // Return as string for database storage
+      } catch (e) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Invalid executables JSON" });
+        return z.NEVER;
+      }
+    }),
+    z.array(z.string()).transform((arr) => JSON.stringify(arr)), // Convert array to JSON string
+    z.null()
+  ]).optional(),
 });
 export const gamesUpdateSchema = createUpdateSchema(gamesTable, {
   ...gamesSelectSchema.shape,
@@ -125,6 +144,24 @@ export const gamesUpdateSchema = createUpdateSchema(gamesTable, {
   install: gamesSelectSchema.shape.install.optional(),
   uninstall: gamesSelectSchema.shape.uninstall.optional(),
   play: gamesSelectSchema.shape.play.optional(),
+  executables: z.union([
+    z.string().transform((str, ctx) => {
+      if (!str || str.trim() === '') return null;
+      try {
+        const parsed = JSON.parse(str);
+        if (!Array.isArray(parsed)) {
+          ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Executables must be an array" });
+          return z.NEVER;
+        }
+        return str; // Return as string for database storage
+      } catch (e) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Invalid executables JSON" });
+        return z.NEVER;
+      }
+    }),
+    z.array(z.string()).transform((arr) => JSON.stringify(arr)), // Convert array to JSON string
+    z.null()
+  ]).optional(),
 });
 
 export const gameEventsSelectSchema = createSelectSchema(gameEventsTable);

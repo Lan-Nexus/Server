@@ -18,10 +18,17 @@ const emit = defineEmits<{
 }>();
 
 function onPressHandle() {
-  emit("primary", {
+  console.log("GameForm onPressHandle - executables.value:", executables.value);
+  console.log(
+    "GameForm onPressHandle - executables length:",
+    executables.value.length
+  );
+
+  const gameData = {
     gameID: gameID.value,
     name: name.value,
     executable: executable.value,
+    executables: executables.value, // Always include, even if empty
     description: description.value,
     needsKey: needsKey.value,
     icon: iconImage.value,
@@ -36,12 +43,19 @@ function onPressHandle() {
     status: status.value,
     archives: fileUpload.value,
     keys: [],
-  });
+  };
+
+  console.log(
+    "GameForm emitting game data with executables:",
+    gameData.executables
+  );
+  emit("primary", gameData);
 }
 
 const gameID = ref<string>(props.game?.gameID || "");
 const name = ref<string>(props.game?.name || "");
 const executable = ref<string>(props.game?.executable || "");
+const executables = ref<string[]>(props.game?.executables || []);
 const description = ref<string>(props.game?.description || "");
 const needsKey = ref<string>(props.game?.needsKey || "0");
 const iconImage = ref<File | undefined>();
@@ -64,6 +78,20 @@ const heroPath = ref<string>(props.game?.heroImage || "");
 const archivePath = ref<string>(
   props.game?.archives ? props.game.archives.split(/[\\/]/).pop() || "" : ""
 );
+
+// Helper for managing executables array
+const newExecutable = ref<string>("");
+
+function addExecutable() {
+  if (newExecutable.value.trim()) {
+    executables.value.push(newExecutable.value.trim());
+    newExecutable.value = "";
+  }
+}
+
+function removeExecutable(index: number) {
+  executables.value.splice(index, 1);
+}
 </script>
 
 <template>
@@ -116,6 +144,63 @@ const archivePath = ref<string>(
         Example: game.exe<br />
         <small class="opacity-70"
           >The name of the .exe file within the game archive.</small
+        >
+      </div>
+    </div>
+  </fieldset>
+
+  <!-- Additional executables for multi-process detection -->
+  <fieldset class="fieldset" v-if="type === 'archive' || type === 'shortcut'">
+    <legend class="fieldset-legend">
+      Additional Processes to Monitor (Optional)
+    </legend>
+
+    <!-- List existing executables -->
+    <div v-if="executables.length > 0" class="space-y-2 mb-3">
+      <div
+        v-for="(exe, index) in executables"
+        :key="index"
+        class="flex items-center gap-2 bg-base-200 p-2 rounded"
+      >
+        <span class="flex-1 font-mono text-sm">{{ exe }}</span>
+        <button
+          type="button"
+          @click="removeExecutable(index)"
+          class="btn btn-sm btn-ghost btn-circle"
+        >
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Add new executable -->
+    <div class="flex gap-2">
+      <input
+        type="text"
+        v-model="newExecutable"
+        @keyup.enter="addExecutable"
+        class="input input-bordered flex-1"
+        placeholder="e.g. launcher.exe or gameservice.exe"
+      />
+      <button
+        type="button"
+        @click="addExecutable"
+        class="btn btn-primary"
+        :disabled="!newExecutable.trim()"
+      >
+        <i class="fas fa-plus"></i> Add
+      </button>
+    </div>
+
+    <div class="alert alert-info mt-2">
+      <i class="fas fa-info-circle"></i>
+      <div class="text-sm">
+        <strong>For games with multiple processes</strong><br />
+        Add launcher executables, anti-cheat services, or any other processes
+        that run alongside the game.<br />
+        <small class="opacity-70"
+          >The game will be detected as running if ANY of these processes are
+          found.</small
         >
       </div>
     </div>

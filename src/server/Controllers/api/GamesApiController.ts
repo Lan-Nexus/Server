@@ -43,6 +43,15 @@ export default class GamesController extends PageController {
       if (typeof req.query.clientId === "string") {
         game.gamekey = await GameKeyModel.myKey(game.id, req.query.clientId);
       }
+      // Parse executables JSON string to array for client
+      if (game.executables && typeof game.executables === 'string') {
+        try {
+          game.executables = JSON.parse(game.executables);
+        } catch (e) {
+          console.error(`Failed to parse executables for game ${game.id}:`, e);
+          game.executables = null;
+        }
+      }
     }
   }
 
@@ -50,6 +59,29 @@ export default class GamesController extends PageController {
   public async mapRequestBody(body: any, req: Request, res: Response) {
     if (body.id) {
       body.id = Number(body.id);
+    }
+
+    // Handle executables field - convert array to JSON string for storage
+    if (body.executables) {
+      console.log('Received executables:', body.executables, 'Type:', typeof body.executables);
+      if (Array.isArray(body.executables)) {
+        body.executables = JSON.stringify(body.executables);
+        console.log('Converted array to JSON string:', body.executables);
+      } else if (typeof body.executables === 'string') {
+        // Validate it's valid JSON
+        try {
+          const parsed = JSON.parse(body.executables);
+          if (!Array.isArray(parsed)) {
+            throw new Error('Executables must be an array');
+          }
+          console.log('Valid JSON string with array:', parsed);
+        } catch (e) {
+          console.error('Invalid executables format:', e);
+          delete body.executables; // Remove invalid data
+        }
+      }
+    } else {
+      console.log('No executables field in body');
     }
 
     const imageFields = ["icon", "logo", "headerImage", "imageCard", "heroImage", "archives"];
@@ -76,9 +108,9 @@ export default class GamesController extends PageController {
         ["archives"],
         req.files as Record<string, Express.Multer.File[]>
       );
-
-      return body;
     }
+
+    return body;
   }
 
   private async downloadImage(url: string, type: string): Promise<string> {
