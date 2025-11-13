@@ -20,6 +20,7 @@ export type getGameType = {
     play: string, // Play script
     needsKey: string,
     executable: string, // Path to the executable file
+    executables?: string[], // Array of process names to monitor
     status: string,
     keys: string[]
 };
@@ -41,6 +42,7 @@ export type postGameType = {
     play: string, // Play script
     needsKey: string,
     executable: string, // Path to the executable file
+    executables?: string[], // Array of process names to monitor
     status: string,
     keys: string[]
 };
@@ -48,12 +50,34 @@ export type postGameType = {
 function setFormData(gameData: postGameType): FormData {
     const formData = new FormData();
 
+    console.log('setFormData - Input gameData:', gameData);
+    console.log('setFormData - executables value:', gameData.executables);
+
     for (const key in gameData) {
         const typedKey = key as keyof postGameType;
-        if (gameData[typedKey] !== undefined) {
-            formData.append(key, gameData[typedKey] as any);
+        const value = gameData[typedKey];
+
+        console.log(`Processing key: ${key}, value:`, value, 'type:', typeof value);
+
+        // Skip null and undefined, but allow empty arrays and empty strings
+        if (value !== undefined && value !== null) {
+            // Convert executables array to JSON string for transmission
+            if (typedKey === 'executables' && Array.isArray(value)) {
+                const jsonString = JSON.stringify(value);
+                console.log(`Converting executables array (length: ${value.length}) to JSON: ${jsonString}`);
+                formData.append(key, jsonString);
+            } else if (!Array.isArray(value)) {
+                // Don't append other arrays (like keys) - only executables
+                formData.append(key, value as any);
+            }
         }
     }
+
+    console.log('FormData entries:');
+    for (const [key, value] of formData.entries()) {
+        console.log(`  ${key}: ${value}`);
+    }
+
     return formData;
 }
 
