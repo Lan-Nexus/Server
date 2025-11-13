@@ -3,7 +3,7 @@ import { useGamesStore } from "@/stores/games";
 import ActionButtons from "@/components/games/ActionButtons.vue";
 import GameKeys from "@/components/games/GameKeys.vue";
 import { useRoute } from "vue-router";
-import { ref, type Ref, onMounted, watch } from "vue";
+import { ref, type Ref, onMounted, onUpdated, onUnmounted } from "vue";
 import api from "@/utls/api";
 
 const route = useRoute();
@@ -13,14 +13,99 @@ const id = ref(route.params.id) as Ref<string>;
 let game = gamesStore.getGameById(Number(id.value));
 
 const keys = ref([]);
+const height = ref("0px");
+const widthOrHeight = ref<string>();
+const logoElement = ref<HTMLElement | null>(null);
+const heroImageElement = ref<HTMLElement | null>(null);
+const backButtonOpacity = ref(1);
+const parallaxContainer = ref<HTMLElement | null>(null);
+
+function updateHeight() {
+  // Calculate height based on viewport width and 1920:620 aspect ratio
+  const viewportWidth = window.innerWidth;
+  const calculatedHeight = (viewportWidth * 620) / 1920; // Full hero image height
+  height.value = calculatedHeight + "px";
+  console.log(
+    "Viewport width:",
+    viewportWidth,
+    "Calculated logo container height:",
+    height.value
+  );
+}
+
+function handleScroll() {
+  if (!parallaxContainer.value || !heroImageElement.value) return;
+
+  const scrollTop = parallaxContainer.value.scrollTop;
+  const heroHeight = heroImageElement.value.clientHeight;
+  const fadeStart = heroHeight * 0.3; // Start fading at 30% of hero height
+  const fadeEnd = heroHeight * 0.5; // Fully faded at 50% of hero height
+
+  if (scrollTop < fadeStart) {
+    backButtonOpacity.value = 1;
+  } else if (scrollTop > fadeEnd) {
+    backButtonOpacity.value = 0;
+  } else {
+    // Linear fade between fadeStart and fadeEnd
+    backButtonOpacity.value =
+      1 - (scrollTop - fadeStart) / (fadeEnd - fadeStart);
+  }
+}
+
+function getLogoSize() {
+  const logoHeight = logoElement.value?.children[0]?.clientHeight;
+  const logoWidth = logoElement.value?.children[0]?.clientWidth;
+  console.log("Logo dimensions - height:", logoHeight, "width:", logoWidth);
+  if (!logoHeight || !logoWidth) {
+    widthOrHeight.value = "w-1/2";
+    return;
+  }
+  if (logoHeight > logoWidth) {
+    widthOrHeight.value = "h-1/2";
+    return;
+  }
+  widthOrHeight.value = "w-1/2";
+}
+
+onMounted(() => {
+  window.addEventListener("resize", updateHeight);
+  updateHeight(); // Calculate immediately on mount
+  setTimeout(() => {
+    updateHeight();
+    getLogoSize();
+    // Set up scroll listener after elements are ready
+    if (parallaxContainer.value) {
+      parallaxContainer.value.addEventListener("scroll", handleScroll);
+      // Ensure we're at the top
+      parallaxContainer.value.scrollTop = 0;
+    }
+  }, 100);
+  // Additional check after a longer delay for slower loading images
+  setTimeout(() => {
+    updateHeight();
+    getLogoSize();
+  }, 500);
+});
+
+onUpdated(() => {
+  updateHeight();
+  getLogoSize();
+});
+
+onUnmounted(() => {
+  window.removeEventListener("resize", updateHeight);
+  if (parallaxContainer.value) {
+    parallaxContainer.value.removeEventListener("scroll", handleScroll);
+  }
+});
 </script>
 
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-base-100 to-base-200 p-6">
+  <div class="bg-gradient-to-br from-base-100 to-base-200">
     <!-- Game Not Found State -->
     <template v-if="!game">
       <div
-        class="flex flex-col items-center justify-center min-h-[60vh] text-center"
+        class="flex flex-col items-center justify-center min-h-[60vh] text-center p-6"
       >
         <div class="mb-8">
           <i class="fas fa-gamepad text-error text-6xl mb-4"></i>
@@ -45,116 +130,216 @@ const keys = ref([]);
       </div>
     </template>
 
-    <!-- Game Details -->
+    <!-- Game Details with Parallax -->
     <template v-else>
-      <!-- Header Section -->
-      <div class="mb-8">
-        <div class="flex items-center gap-4 mb-6">
+      <div ref="parallaxContainer" class="parallax">
+        <!-- Back Button (Sticky positioned in top left until scrolled past hero) -->
+        <div
+          class="sticky top-6 left-6 z-50 float-left ml-6 transition-opacity duration-300"
+          :style="{ opacity: backButtonOpacity }"
+        >
           <button
             @click="$router.go(-1)"
-            class="btn btn-circle btn-ghost hover:btn-primary transition-all duration-200"
+            class="btn btn-circle btn-ghost bg-base-100/80 backdrop-blur-sm hover:btn-primary transition-all duration-200 shadow-lg"
           >
             <i class="fas fa-arrow-left"></i>
           </button>
-          <h1
-            class="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent"
-          >
-            Game Details
-          </h1>
         </div>
-      </div>
 
-      <!-- Game Hero Section -->
-      <div
-        class="card bg-base-100/50 backdrop-blur-sm border border-base-300/20 shadow-xl mb-6"
-      >
-        <div class="card-body">
-          <!-- Game Header -->
+        <!-- Parallax Background Layer -->
+        <div class="parallax__layer parallax__layer--back">
+          <div ref="heroImageElement" class="w-full bg-error">
+            <img
+              v-if="game.heroImage"
+              :src="game.heroImage"
+              :alt="`${game.name} hero`"
+              class="w-full"
+              @load="updateHeight"
+            />
+            <img
+              v-else-if="game.headerImage"
+              :src="game.headerImage"
+              :alt="`${game.name} header`"
+              class="w-full"
+              @load="updateHeight"
+            />
+            <div
+              v-else
+              class="w-full bg-gradient-to-br from-primary/30 to-secondary/30"
+              style="aspect-ratio: 16 / 5.1"
+            ></div>
+          </div>
+        </div>
+
+        <!-- Logo Layer -->
+        <div ref="logoElement" class="relative w-full logo">
+          <img
+            v-if="game.logo"
+            :src="game.logo"
+            :alt="`${game.name} logo`"
+            :class="widthOrHeight"
+            class="absolute bottom-5 left-5"
+            @load="getLogoSize"
+          />
           <div
-            class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-6"
+            v-else-if="!game.logo"
+            style="text-shadow: 2px 2px 2px black"
+            class="absolute bottom-5 left-5 text-5xl text-white font-bold"
           >
-            <div class="flex items-center gap-4">
-              <div class="avatar">
-                <div
-                  class="w-20 h-20 rounded-xl ring-4 ring-primary/30 shadow-lg"
-                >
-                  <img
-                    :src="game.icon"
-                    :alt="`${game.name} icon`"
-                    class="object-cover"
+            {{ game.name }}
+          </div>
+        </div>
+
+        <!-- Parallax Foreground Layer (Content) -->
+        <div class="parallax__layer parallax__layer--base">
+          <div class="content-container bg-base-200">
+            <!-- Action Bar -->
+            <div class="bg-base-200 p-6 shadow-lg">
+              <div
+                class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6"
+              >
+                <div class="flex items-center gap-4">
+                  <div class="avatar">
+                    <div
+                      class="w-20 h-20 rounded-xl ring-4 ring-primary/30 shadow-lg"
+                    >
+                      <img
+                        :src="game.icon"
+                        :alt="`${game.name} icon`"
+                        class="object-cover"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <h3 class="text-2xl font-bold text-base-content mb-1">
+                      {{ game.name }}
+                    </h3>
+                    <div class="flex flex-wrap gap-2">
+                      <div class="badge badge-primary badge-lg">
+                        <i class="fas fa-hashtag mr-1"></i>
+                        ID: {{ game.id }}
+                      </div>
+                      <div class="badge badge-secondary" v-if="game.status">
+                        {{ game.status }}
+                      </div>
+                      <div class="badge badge-accent" v-if="game.type">
+                        {{ game.type }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex justify-center lg:justify-end">
+                  <ActionButtons
+                    :showView="false"
+                    :game="game"
+                    class="scale-110"
                   />
                 </div>
               </div>
-              <div>
-                <h2 class="text-3xl font-bold text-base-content mb-1">
-                  {{ game.name }}
-                </h2>
-                <div class="flex flex-wrap gap-2">
-                  <div class="badge badge-primary badge-lg">
-                    <i class="fas fa-hashtag mr-1"></i>
-                    ID: {{ game.id }}
+            </div>
+
+            <!-- Main Content Area -->
+            <div class="p-6 flex flex-col lg:flex-row gap-6">
+              <!-- Left Column: Description and Images -->
+              <div class="flex-1">
+                <!-- Description Section -->
+                <div
+                  class="card bg-base-100/50 backdrop-blur-sm border border-base-300/20 shadow-xl mb-6"
+                >
+                  <div class="card-body">
+                    <h3 class="card-title text-xl mb-4">
+                      <i class="fas fa-file-alt text-info"></i>
+                      Description
+                    </h3>
+                    <div class="prose prose-lg max-w-none">
+                      <div
+                        class="bg-base-200/50 p-6 rounded-xl border border-base-300/20 text-base-content leading-relaxed"
+                        v-html="game.description || 'No description available.'"
+                      ></div>
+                    </div>
                   </div>
-                  <div class="badge badge-secondary" v-if="game.status">
-                    {{ game.status }}
+                </div>
+
+                <!-- Additional Images Gallery -->
+                <div
+                  class="card bg-base-100/50 backdrop-blur-sm border border-base-300/20 shadow-xl"
+                  v-if="game.imageCard || game.headerImage || game.heroImage"
+                >
+                  <div class="card-body">
+                    <h3 class="card-title text-xl mb-4">
+                      <i class="fas fa-images text-primary"></i>
+                      Media Gallery
+                    </h3>
+                    <div
+                      class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+                    >
+                      <div
+                        class="relative overflow-hidden rounded-lg shadow-lg"
+                        v-if="game.imageCard"
+                      >
+                        <img
+                          :src="game.imageCard"
+                          :alt="`${game.name} card`"
+                          class="w-full h-48 object-cover hover:scale-105 transition-transform duration-300"
+                        />
+                        <div
+                          class="absolute top-2 left-2 badge badge-sm badge-primary"
+                        >
+                          Card Image
+                        </div>
+                      </div>
+                      <div
+                        class="relative overflow-hidden rounded-lg shadow-lg"
+                        v-if="game.headerImage"
+                      >
+                        <img
+                          :src="game.headerImage"
+                          :alt="`${game.name} header`"
+                          class="w-full h-48 object-cover hover:scale-105 transition-transform duration-300"
+                        />
+                        <div
+                          class="absolute top-2 left-2 badge badge-sm badge-secondary"
+                        >
+                          Header Image
+                        </div>
+                      </div>
+                      <div
+                        class="relative overflow-hidden rounded-lg shadow-lg"
+                        v-if="game.heroImage"
+                      >
+                        <img
+                          :src="game.heroImage"
+                          :alt="`${game.name} hero`"
+                          class="w-full h-48 object-cover hover:scale-105 transition-transform duration-300"
+                        />
+                        <div
+                          class="absolute top-2 left-2 badge badge-sm badge-accent"
+                        >
+                          Hero Image
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div class="badge badge-accent" v-if="game.type">
-                    {{ game.type }}
+                </div>
+              </div>
+
+              <!-- Right Column: Game Keys (if applicable) -->
+              <div class="w-full lg:w-96" v-if="game.needsKey">
+                <div
+                  class="card bg-base-100/50 backdrop-blur-sm border border-base-300/20 shadow-xl sticky top-6"
+                >
+                  <div class="card-body">
+                    <h3 class="card-title text-xl mb-4">
+                      <i class="fas fa-key text-warning"></i>
+                      Game Keys
+                    </h3>
+                    <GameKeys :gameId="Number(game.id)" />
                   </div>
                 </div>
               </div>
             </div>
-
-            <!-- Action Buttons -->
-            <div class="flex justify-center lg:justify-end">
-              <ActionButtons :showView="false" :game="game" class="scale-110" />
-            </div>
-          </div>
-
-          <!-- Header Image -->
-          <div
-            class="relative overflow-hidden rounded-xl shadow-2xl mb-6"
-            v-if="game.headerImage"
-          >
-            <img
-              :src="game.headerImage"
-              :alt="`${game.name} header`"
-              class="w-full h-64 object-cover"
-            />
-            <div
-              class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"
-            ></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Game Keys Section -->
-      <div
-        class="card bg-base-100/50 backdrop-blur-sm border border-base-300/20 shadow-xl mb-6"
-        v-if="game.needsKey"
-      >
-        <div class="card-body">
-          <h3 class="card-title text-xl mb-4">
-            <i class="fas fa-key text-warning"></i>
-            Game Keys
-          </h3>
-          <GameKeys :gameId="Number(game.id)" />
-        </div>
-      </div>
-
-      <!-- Description Section -->
-      <div
-        class="card bg-base-100/50 backdrop-blur-sm border border-base-300/20 shadow-xl"
-      >
-        <div class="card-body">
-          <h3 class="card-title text-xl mb-4">
-            <i class="fas fa-file-alt text-info"></i>
-            Description
-          </h3>
-          <div class="prose prose-lg max-w-none">
-            <div
-              class="bg-base-200/50 p-6 rounded-xl border border-base-300/20 text-base-content leading-relaxed"
-              v-html="game.description || 'No description available.'"
-            ></div>
           </div>
         </div>
       </div>
@@ -163,6 +348,57 @@ const keys = ref([]);
 </template>
 
 <style scoped>
+/* Parallax Container */
+.parallax {
+  perspective: 1px;
+  height: calc(100vh - 5rem); /* Subtract navbar height */
+  width: 100vw;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+  position: fixed;
+  top: 5rem; /* Position below navbar */
+  left: 0;
+}
+
+.parallax__layer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+.parallax__layer * {
+  pointer-events: auto;
+}
+
+.parallax__layer--base {
+  transform: translateZ(0);
+}
+
+.parallax__layer--back {
+  transform: translateZ(-0.5px) scale(1.5);
+  width: 100%;
+  left: 0;
+  top: 0;
+}
+
+/* Logo positioning */
+.logo {
+  height: v-bind(height);
+  position: relative;
+  z-index: 10;
+}
+
+/* Content container positioning */
+.content-container {
+  margin-top: 32%;
+  min-height: calc(100vh - 32%);
+  position: relative;
+}
+
 /* Glass morphism effect */
 .card {
   backdrop-filter: blur(10px);
@@ -194,5 +430,10 @@ const keys = ref([]);
 
 .avatar:hover .w-20 {
   transform: scale(1.05);
+}
+
+/* Ensure images in gallery have proper aspect ratio */
+.grid img {
+  object-fit: cover;
 }
 </style>

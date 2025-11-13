@@ -7,6 +7,7 @@ import GamesView from '@/views/GamesView.vue'
 import LoginView from '@/views/LoginView.vue'
 import SetupView from '@/views/SetupView.vue'
 import CreateGameSteamView from '@/views/CreateGameSteamView.vue'
+import AddGameWithImagesView from '@/views/AddGameWithImagesView.vue'
 import FindGameView from '@/views/FindGameView.vue'
 import addGameView from '@/views/addGameView.vue'
 import EventsView from '@/views/EventsView.vue'
@@ -18,6 +19,10 @@ import { useAuthStore } from '@/stores/auth'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
+  scrollBehavior(to, from, savedPosition) {
+    // Always scroll to top on route change
+    return { top: 0, behavior: 'instant' }
+  },
   routes: [
     {
       path: '/',
@@ -40,19 +45,24 @@ const router = createRouter({
       component: SetupView,
     },
     {
-      path: '/game/create',
+      path: '/game/create/:type?',
       name: 'createGame',
       component: CreateGameView,
     },
     {
-      path: '/game/view/:id',
-      name: 'viewGame',
-      component: ViewGameView,
+      path: '/game/add-with-images',
+      name: 'addGameWithImages',
+      component: AddGameWithImagesView,
     },
     {
       path: '/steam/',
       name: 'createGameSteam',
       component: CreateGameSteamView,
+    },
+    {
+      path: '/game/view/:id',
+      name: 'viewGame',
+      component: ViewGameView,
     },
     {
       path: '/game/edit/:id',

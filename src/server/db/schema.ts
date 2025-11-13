@@ -1,3 +1,4 @@
+import { relations } from "drizzle-orm";
 import { serial, mysqlTable, text, varchar, int, mediumtext, mysqlEnum, datetime } from "drizzle-orm/mysql-core";
 
 
@@ -34,6 +35,11 @@ export const usersTable = mysqlTable('users_table', {
   avatar: text('avatar'), // JSON string containing avatar configuration
 });
 
+export const usersTableRelations = relations(usersTable, ({ many }) => ({
+  gameSessions: many(gameSessionsTable),
+  gameKeys: many(gameKeysTable),
+}));
+
 export const gamesTable = mysqlTable("games", {
   id: serial().primaryKey(),
   gameID: varchar('game_id', { length: 255 }).unique().notNull(),
@@ -62,6 +68,13 @@ export const gameKeysTable = mysqlTable("game_keys", {
   clientId: varchar("client_id", { length: 255 })
 });
 
+export const gameEventsRelations = relations(gameKeysTable, ({ one }) => ({
+  user: one(usersTable, {
+    fields: [gameKeysTable.clientId],
+    references: [usersTable.clientId],
+  }),
+}));
+
 export const gameEventsStatus = ['active', 'cancelled'] as const;
 export const gameEventsStatusEnum = mysqlEnum('event_status', gameEventsStatus);
 
@@ -75,6 +88,7 @@ export const gameEventsTable = mysqlTable("game_events", {
   description: text("description")
 });
 
+
 export const gameSessionsTable = mysqlTable("game_sessions", {
   id: serial().primaryKey(),
   clientId: varchar("client_id", { length: 255 }).notNull(),
@@ -83,6 +97,13 @@ export const gameSessionsTable = mysqlTable("game_sessions", {
   endTime: datetime("end_time"),
   isActive: int("is_active").notNull().default(1), // 1 = active session, 0 = ended session
 });
+
+export const gameSessionsRelations = relations(gameSessionsTable, ({ one }) => ({
+  user: one(usersTable, {
+    fields: [gameSessionsTable.clientId],
+    references: [usersTable.clientId],
+  }),
+}));
 
 
 export const gamesSelectSchema = createSelectSchema(gamesTable);

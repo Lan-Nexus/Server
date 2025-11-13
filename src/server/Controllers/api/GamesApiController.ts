@@ -54,8 +54,9 @@ export default class GamesController extends PageController {
 
     const imageFields = ["icon", "logo", "headerImage", "imageCard", "heroImage", "archives"];
 
+    // Only download images if they're URLs (not handled by multer)
     for (const field of imageFields) {
-      if (body[field]) {
+      if (body[field] && typeof body[field] === 'string' && (body[field].startsWith('http://') || body[field].startsWith('https://'))) {
         body[field] = await this.downloadImage(body[field], field);
       }
     }
@@ -88,9 +89,12 @@ export default class GamesController extends PageController {
       }
       try {
         const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
         const blob = await response.blob();
         const extPart = url.split('.').pop();
-        const ext = extPart ? extPart.split(/\#|\?/)[0] : '';
+        const ext = extPart ? extPart.split(/\#|\?/)[0] : 'jpg';
         const name = `${type}-${Date.now()}.${ext}`;
         const uploadDir = path.join(process.cwd(), "public", "games", "images", "uploads");
 
@@ -101,8 +105,8 @@ export default class GamesController extends PageController {
         fs.writeFileSync(path.join(uploadDir, name), Buffer.from(await blob.arrayBuffer()));
         resolve(`/games/images/uploads/${name}`);
       } catch (error) {
-        console.error("Error downloading image:", error);
-        reject(new Error("Failed to download image"));
+        console.error(`Error downloading image from ${url}:`, error);
+        reject(error);
       }
     });
   }

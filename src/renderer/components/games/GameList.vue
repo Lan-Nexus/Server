@@ -31,18 +31,20 @@ const gameCount = computed(() => gamesStore.games.length);
               <i class="fas fa-plus"></i>
               Add Game
             </div>
-            <ul tabindex="0" class="dropdown-content menu bg-base-100/95 backdrop-blur-sm border border-base-300/20 rounded-xl shadow-2xl w-56 p-2 mt-2 gap-1">
+            <ul
+              tabindex="0"
+              class="dropdown-content menu bg-base-100/95 backdrop-blur-sm border border-base-300/20 rounded-xl shadow-2xl w-56 p-2 mt-2 gap-1"
+            >
               <li>
                 <router-link
-                  :to="{ name: 'findGame' }"
-                  class="flex items-center gap-3 p-3 hover:bg-info/10 hover:text-info rounded-lg transition-all duration-200"
+                  :to="{ name: 'addGameWithImages' }"
+                  class="flex items-center gap-3 p-3 hover:bg-success/10 hover:text-success rounded-lg transition-all duration-200"
                 >
-                  <div class="p-1 bg-info/10 rounded-lg">
-                    <i class="fas fa-search text-info"></i>
+                  <div class="p-1 bg-success/10 rounded-lg">
+                    <i class="fas fa-plus text-success"></i>
                   </div>
                   <div>
-                    <div class="font-semibold">Find Game</div>
-                    <div class="text-xs opacity-60">Search existing games</div>
+                    <div class="font-semibold">Create New Game</div>
                   </div>
                 </router-link>
               </li>
@@ -55,22 +57,8 @@ const gameCount = computed(() => gamesStore.games.length);
                     <i class="fab fa-steam text-accent"></i>
                   </div>
                   <div>
-                    <div class="font-semibold">From Steam</div>
+                    <div class="font-semibold">Add From Steam</div>
                     <div class="text-xs opacity-60">Import from Steam</div>
-                  </div>
-                </router-link>
-              </li>
-              <li>
-                <router-link
-                  :to="{ name: 'createGame' }"
-                  class="flex items-center gap-3 p-3 hover:bg-success/10 hover:text-success rounded-lg transition-all duration-200"
-                >
-                  <div class="p-1 bg-success/10 rounded-lg">
-                    <i class="fas fa-plus text-success"></i>
-                  </div>
-                  <div>
-                    <div class="font-semibold">Create New</div>
-                    <div class="text-xs opacity-60">Create from scratch</div>
                   </div>
                 </router-link>
               </li>
