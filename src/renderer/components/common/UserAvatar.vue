@@ -257,15 +257,6 @@ const avatarUrl = computed(() => {
       return avatar.toDataUri();
     }
 
-    // Fallback: generate avatar from name/seed
-    if (props.name || props.seed) {
-      const avatar = createAvatar(adventurer, {
-        seed: props.seed || props.name || "default",
-        size: pixelSize.value,
-      });
-      return avatar.toDataUri();
-    }
-
     return null;
   } catch (error) {
     console.error("Error generating avatar:", error);
