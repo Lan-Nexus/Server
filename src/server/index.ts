@@ -108,6 +108,9 @@ const server = ViteExpress.listen(app, port, () => {
   io.on('connection', (socket) => {
     console.log('🟢 Client connected:', socket.id);
 
+    // Store clientId when client connects with session
+    let clientId: string | null = null;
+
     // Join the game sessions room for real-time updates
     socket.join('game-sessions');
     console.log(`📡 Client ${socket.id} joined game-sessions room`);
@@ -115,6 +118,9 @@ const server = ViteExpress.listen(app, port, () => {
     // Handle game session events from clients
     socket.on('game_session_started', async (sessionData) => {
       console.log('🎮 Game session started:', sessionData);
+      // Store clientId for this socket connection
+      clientId = sessionData.clientId;
+
       try {
         // Save session to database
         const newSession = await GameSessionModel.startSession(sessionData.clientId, sessionData.gameId);
@@ -236,8 +242,95 @@ const server = ViteExpress.listen(app, port, () => {
       }
     });
 
+    // Handle client request to check their own session status
+    socket.on('check_my_session', async (data: { clientId: string }) => {
+      console.log('🔍 Client checking their session:', data.clientId);
+      // Store clientId for this socket connection
+      clientId = data.clientId;
+
+      try {
+        const activeSession = await GameSessionModel.getActiveSessionForClient(data.clientId);
+
+        if (activeSession) {
+          const user = await UserModel.findByClientId(activeSession.clientId);
+          if (!user) {
+            throw new Error('User not found for clientId: ' + activeSession.clientId);
+          }
+          const sessionEventData = {
+            id: activeSession.id,
+            clientId: activeSession.clientId,
+            gameId: activeSession.gameId,
+            startTime: activeSession.startTime.toISOString(),
+            endTime: activeSession.endTime?.toISOString(),
+            isActive: activeSession.isActive,
+            user: {
+              id: user.id,
+              name: user.name,
+              clientId: user.clientId,
+              role: user.role,
+              avatar: user.avatar
+            }
+          };
+          socket.emit('my_session_status', { hasSession: true, session: sessionEventData });
+          console.log(`📤 Sent session status to client ${data.clientId}: playing game ${activeSession.gameId}`);
+        } else {
+          socket.emit('my_session_status', { hasSession: false, session: null });
+          console.log(`📤 Sent session status to client ${data.clientId}: no active session`);
+        }
+      } catch (error) {
+        console.error('❌ Error checking client session:', error);
+        socket.emit('session_error', { error: 'Failed to check session' });
+      }
+    });
+
     socket.on('disconnect', (reason) => {
       console.log('🔴 Client disconnected:', socket.id, 'reason:', reason);
+
+      // End any active session for this client when they disconnect
+      if (clientId) {
+        console.log('⚠️ Client had active session, ending it:', clientId);
+        GameSessionModel.getActiveSessionForClient(clientId)
+          .then(async (activeSession) => {
+            if (activeSession) {
+              await GameSessionModel.endSession(activeSession.id);
+              console.log('✅ Ended session', activeSession.id, 'for disconnected client:', clientId);
+
+              // Fetch updated session and broadcast
+              const updatedSession = await GameSessionModel.readById(activeSession.id);
+              if (updatedSession) {
+                const user = await UserModel.findByClientId(updatedSession.clientId);
+                if (user) {
+                  const sessionEventData = {
+                    id: updatedSession.id,
+                    clientId: updatedSession.clientId,
+                    gameId: updatedSession.gameId,
+                    startTime: updatedSession.startTime.toISOString(),
+                    endTime: updatedSession.endTime?.toISOString(),
+                    isActive: updatedSession.isActive,
+                    user: {
+                      id: user.id,
+                      name: user.name,
+                      clientId: user.clientId,
+                      role: user.role,
+                      avatar: user.avatar
+                    }
+                  };
+
+                  // Broadcast to all clients
+                  GameSessionEvents.sessionEnded(sessionEventData);
+
+                  // Update active sessions count with user data
+                  const activeSessions = await GameSessionModel.getAllActiveSessions();
+                  const activeSessionsWithUsers = await convertSessionsToEventDataWithUsers(activeSessions);
+                  GameSessionEvents.activeSessionsUpdated(activeSessionsWithUsers);
+                }
+              }
+            }
+          })
+          .catch((error) => {
+            console.error('❌ Error ending session for disconnected client:', error);
+          });
+      }
     });
 
     socket.on('error', (error) => {
