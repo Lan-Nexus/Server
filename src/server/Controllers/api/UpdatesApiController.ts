@@ -9,11 +9,16 @@ const GITHUB_OWNER = 'Lan-Nexus';
 const GITHUB_REPO = 'Client';
 const CACHE_DIR = path.join(process.cwd(), 'cache', 'updates');
 
-// Track in-progress downloads to support multiple simultaneous clients
+// Track in-progress downloads with in-memory buffering
+// Subsequent clients get buffered chunks first, then continue streaming
 interface DownloadState {
-  passThrough: PassThrough;
-  clients: Array<{ res: Response; stream: PassThrough }>;
+  buffer: Buffer[];
+  bufferSize: number;
+  contentLength: string;
+  filename: string;
   cacheStream: fs.WriteStream;
+  downloadComplete: boolean;
+  clients: Array<{ res: Response; currentChunk: number }>;
   promise: Promise<void>;
 }
 
@@ -97,9 +102,13 @@ url: ${localUrl}
 export async function getUpdateFeed(req: Request, res: Response) {
   try {
     const { platform } = req.params;
+    const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
+
+    console.log(`📋 Update feed requested for ${platform} from ${clientIp}`);
 
     // Validate platform
     if (!['win32', 'darwin', 'linux'].includes(platform)) {
+      console.log(`❌ Invalid platform requested: ${platform} from ${clientIp}`);
       return res.status(400).json({ error: 'Invalid platform' });
     }
 
@@ -118,7 +127,7 @@ export async function getUpdateFeed(req: Request, res: Response) {
     res.setHeader('Content-Type', 'text/plain');
     res.send(feedContent);
 
-    console.log(`✅ Served update feed for ${platform}, version: ${release.tag_name}`);
+    console.log(`✅ Served update feed for ${platform}, version: ${release.tag_name} to ${clientIp}`);
   } catch (error) {
     console.error('❌ Error serving update feed:', error);
     res.status(500).json({
@@ -129,30 +138,57 @@ export async function getUpdateFeed(req: Request, res: Response) {
 }
 
 /**
- * Downloads a file from GitHub and streams it to multiple clients simultaneously
- * First client triggers download, subsequent clients join the same stream
+ * Downloads a file from GitHub with in-memory buffering
+ * Subsequent clients get buffered chunks first, then continue streaming
  */
 async function streamFromGitHub(filename: string, res: Response) {
   // Check if download is already in progress
   const existingDownload = activeDownloads.get(filename);
 
   if (existingDownload) {
-    console.log(`📡 Joining existing download stream for: ${filename}`);
+    console.log(`📡 Joining existing download (${existingDownload.buffer.length} chunks buffered) for: ${filename}`);
 
-    // Create a new PassThrough stream for this client
-    const clientStream = new PassThrough();
-    existingDownload.clients.push({ res, stream: clientStream });
+    // Add this client to the list
+    const clientInfo = { res, currentChunk: 0 };
+    existingDownload.clients.push(clientInfo);
 
-    // Pipe the main stream to this client's stream
-    existingDownload.passThrough.pipe(clientStream);
-
-    // Set headers and pipe to response
+    // Set headers with Content-Length so client shows proper progress
     res.setHeader('Content-Type', 'application/octet-stream');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-    clientStream.pipe(res);
+    res.setHeader('Content-Length', existingDownload.contentLength);
 
-    // Wait for download to complete
-    await existingDownload.promise;
+    try {
+      // Send all buffered chunks immediately
+      for (let i = 0; i < existingDownload.buffer.length; i++) {
+        if (!res.write(existingDownload.buffer[i])) {
+          // Backpressure - wait for drain
+          await new Promise(resolve => res.once('drain', resolve));
+        }
+        clientInfo.currentChunk = i + 1;
+      }
+
+      // If download is still in progress, wait for new chunks
+      if (!existingDownload.downloadComplete) {
+        // Wait for download to complete
+        await existingDownload.promise;
+      }
+
+      // Send any remaining chunks (if we joined very late)
+      for (let i = clientInfo.currentChunk; i < existingDownload.buffer.length; i++) {
+        if (!res.write(existingDownload.buffer[i])) {
+          await new Promise(resolve => res.once('drain', resolve));
+        }
+      }
+
+      res.end();
+      console.log(`✅ Served ${filename} to joined client (${existingDownload.bufferSize} bytes)`);
+    } catch (error) {
+      console.error(`❌ Error serving to joined client:`, error);
+      if (!res.headersSent) {
+        res.status(500).end();
+      }
+    }
+
     return;
   }
 
@@ -171,81 +207,105 @@ async function streamFromGitHub(filename: string, res: Response) {
   const cachePath = path.join(CACHE_DIR, filename);
   const tempPath = `${cachePath}.tmp`;
 
-  // Create streams
-  const passThrough = new PassThrough();
+  // Create cache write stream
   const cacheStream = fs.createWriteStream(tempPath);
-  const clientStream = new PassThrough();
 
-  // Track this download
+  // Start download from GitHub to get content length
+  const response = await axios.get(asset.browser_download_url, {
+    responseType: 'stream',
+    headers: {
+      'User-Agent': 'Lan-Nexus-Update-Server'
+    }
+  });
+
+  const githubStream = response.data as Readable;
+  const contentLength = response.headers['content-length'] || '';
+
+  console.log(`📦 Downloading ${filename} (${contentLength} bytes)`);
+
+  // Track this download with buffering
   const downloadState: DownloadState = {
-    passThrough,
-    clients: [{ res, stream: clientStream }],
+    buffer: [],
+    bufferSize: 0,
+    contentLength,
+    filename,
     cacheStream,
-    promise: (async () => {
+    downloadComplete: false,
+    clients: [{ res, currentChunk: 0 }],
+    promise: Promise.resolve() // Will be set below
+  };
+
+  // Register this download BEFORE starting the stream
+  // This allows subsequent clients to join while we're setting up
+  activeDownloads.set(filename, downloadState);
+
+  // Now start the actual download promise
+  downloadState.promise = (async () => {
       try {
-        // Start download from GitHub
-        const response = await axios.get(asset.browser_download_url, {
-          responseType: 'stream',
-          headers: {
-            'User-Agent': 'Lan-Nexus-Update-Server'
-          }
-        });
-
-        const githubStream = response.data as Readable;
-
         // Set headers for the first client
         res.setHeader('Content-Type', 'application/octet-stream');
         res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-        res.setHeader('Content-Length', response.headers['content-length'] || '');
+        res.setHeader('Content-Length', contentLength);
 
-        // Pipe GitHub stream to passThrough
-        // passThrough will broadcast to all connected clients AND cache file
-        githubStream.pipe(passThrough);
+        // Process chunks as they arrive
+        githubStream.on('data', (chunk: Buffer) => {
+          // Add to buffer for subsequent clients
+          downloadState.buffer.push(chunk);
+          downloadState.bufferSize += chunk.length;
 
-        // Pipe passThrough to cache file
-        passThrough.pipe(cacheStream);
+          // Write to cache file
+          cacheStream.write(chunk);
 
-        // Pipe passThrough to first client
-        passThrough.pipe(clientStream);
-        clientStream.pipe(res);
+          // Send to all connected clients
+          downloadState.clients.forEach(client => {
+            if (client.currentChunk === downloadState.buffer.length - 1) {
+              // This client is caught up, send this new chunk
+              client.res.write(chunk);
+              client.currentChunk++;
+            }
+          });
+        });
 
         // Wait for download to complete
         await new Promise<void>((resolve, reject) => {
-          cacheStream.on('finish', () => {
-            console.log(`✅ Download complete, cached: ${filename}`);
+          githubStream.on('end', () => {
+            console.log(`✅ Download complete: ${filename} (${downloadState.bufferSize} bytes, ${downloadState.buffer.length} chunks)`);
+            downloadState.downloadComplete = true;
 
-            // Rename temp file to final cache file
-            fs.renameSync(tempPath, cachePath);
+            // Close cache stream
+            cacheStream.end();
 
-            // Close all client streams
+            // End all client responses
             downloadState.clients.forEach(client => {
-              client.stream.end();
+              client.res.end();
             });
 
             resolve();
-          });
-
-          cacheStream.on('error', (err) => {
-            console.error(`❌ Cache write error for ${filename}:`, err);
-
-            // Clean up temp file
-            if (fs.existsSync(tempPath)) {
-              fs.unlinkSync(tempPath);
-            }
-
-            // Close all client streams with error
-            downloadState.clients.forEach(client => {
-              client.stream.destroy(err);
-            });
-
-            reject(err);
           });
 
           githubStream.on('error', (err) => {
             console.error(`❌ GitHub stream error for ${filename}:`, err);
             reject(err);
           });
+
+          cacheStream.on('error', (err) => {
+            console.error(`❌ Cache write error for ${filename}:`, err);
+            reject(err);
+          });
         });
+
+        // Wait for cache stream to finish
+        await new Promise<void>((resolve, reject) => {
+          cacheStream.on('finish', () => {
+            // Rename temp file to final cache file
+            fs.renameSync(tempPath, cachePath);
+            console.log(`💾 Cached: ${filename}`);
+            resolve();
+          });
+
+          cacheStream.on('error', reject);
+        });
+
       } catch (error) {
         console.error(`❌ Download failed for ${filename}:`, error);
 
@@ -254,16 +314,24 @@ async function streamFromGitHub(filename: string, res: Response) {
           fs.unlinkSync(tempPath);
         }
 
+        // Send error to all connected clients
+        downloadState.clients.forEach(client => {
+          if (!client.res.headersSent) {
+            client.res.status(500).end();
+          } else {
+            client.res.end();
+          }
+        });
+
         throw error;
       } finally {
-        // Remove from active downloads
-        activeDownloads.delete(filename);
+        // Remove from active downloads after a delay (allow late joiners to still get buffered data)
+        setTimeout(() => {
+          activeDownloads.delete(filename);
+          console.log(`🗑️  Cleared buffer for ${filename}`);
+        }, 5000);
       }
-    })()
-  };
-
-  // Register this download
-  activeDownloads.set(filename, downloadState);
+    })();
 
   // Wait for completion
   await downloadState.promise;
@@ -276,11 +344,15 @@ async function streamFromGitHub(filename: string, res: Response) {
 export async function downloadFile(req: Request, res: Response) {
   try {
     const { filename } = req.params;
+    const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
+
+    console.log(`📥 Download requested: ${filename} from ${clientIp}`);
 
     // Sanitize filename to prevent directory traversal
     const sanitizedFilename = path.basename(filename);
 
     if (sanitizedFilename !== filename) {
+      console.log(`❌ Invalid filename (directory traversal attempt): ${filename} from ${clientIp}`);
       return res.status(400).json({ error: 'Invalid filename' });
     }
 
@@ -288,19 +360,26 @@ export async function downloadFile(req: Request, res: Response) {
 
     // Check if file exists in cache
     if (fs.existsSync(cachePath)) {
-      console.log(`📦 Serving from cache: ${sanitizedFilename}`);
-
       const stat = fs.statSync(cachePath);
+      console.log(`📦 Serving ${sanitizedFilename} from cache (${stat.size} bytes) to ${clientIp}`);
+
       res.setHeader('Content-Type', 'application/octet-stream');
       res.setHeader('Content-Disposition', `attachment; filename="${sanitizedFilename}"`);
       res.setHeader('Content-Length', stat.size.toString());
 
       const fileStream = fs.createReadStream(cachePath);
       fileStream.pipe(res);
+
+      // Log when complete
+      fileStream.on('end', () => {
+        console.log(`✅ Completed serving ${sanitizedFilename} from cache to ${clientIp}`);
+      });
+
       return;
     }
 
     // File not in cache, stream from GitHub (and cache it)
+    console.log(`🌐 File not in cache, downloading from GitHub: ${sanitizedFilename}`);
     await streamFromGitHub(sanitizedFilename, res);
 
   } catch (error) {
@@ -319,6 +398,9 @@ export async function downloadFile(req: Request, res: Response) {
  * Health check endpoint for clients to detect if server is available
  */
 export async function healthCheck(req: Request, res: Response) {
+  const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
+  console.log(`💚 Health check from ${clientIp}`);
+
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
@@ -330,10 +412,17 @@ export async function healthCheck(req: Request, res: Response) {
  * Manual sync endpoint to pre-cache updates (admin only)
  */
 export async function syncUpdates(req: Request, res: Response) {
+  const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
+
   try {
+    console.log(`🔄 Manual sync requested from ${clientIp}`);
+
     const release = await getLatestReleaseFromGitHub();
     const version = release.tag_name;
     const assets = release.assets.map((a: any) => a.name);
+
+    console.log(`✅ Sync complete: version ${version}, ${assets.length} assets available`);
+    console.log(`   Assets: ${assets.join(', ')}`);
 
     res.json({
       message: 'Latest release information fetched',
@@ -342,7 +431,7 @@ export async function syncUpdates(req: Request, res: Response) {
       cacheDir: CACHE_DIR
     });
   } catch (error) {
-    console.error('❌ Error syncing updates:', error);
+    console.error(`❌ Error syncing updates from ${clientIp}:`, error);
     res.status(500).json({
       error: 'Failed to sync updates',
       details: error instanceof Error ? error.message : 'Unknown error'
