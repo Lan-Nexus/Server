@@ -8,6 +8,7 @@ import gameEventsController from '../Controllers/api/GameEventsApiController.js'
 import UsersController from '../Controllers/api/UsersApiController.js';
 import CalendarApiController from '../Controllers/api/CalendarApiController.js';
 import GameSessionApiController from '../Controllers/api/GameSessionApiController.js';
+import * as UpdatesApiController from '../Controllers/api/UpdatesApiController.js';
 import Router from './Router.js';
 import multer from 'multer';
 import path from 'path';
@@ -264,5 +265,19 @@ authenticatedRouter.post('/calendar/fetch', (req: any, res: any, next: any) => {
 
 // Mount the authenticated router
 router.use(authenticatedRouter);
+
+// Update server endpoints (public, no auth required for clients to check updates)
+router.get('/updates/health', UpdatesApiController.healthCheck);
+router.get('/updates/:platform/latest.yml', UpdatesApiController.getUpdateFeed);
+router.get('/updates/download/:filename', UpdatesApiController.downloadFile);
+
+// Admin-only sync endpoint (authenticated)
+authenticatedRouter.post('/updates/sync', (req: any, res: any) => {
+  // Check for admin permission
+  if (!hasPermission(req.user?.role || 'user', 'updates:sync')) {
+    return res.status(403).json({ error: 'Insufficient permissions' });
+  }
+  UpdatesApiController.syncUpdates(req, res);
+});
 
 export default router;

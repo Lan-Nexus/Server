@@ -3,6 +3,7 @@ node_modules
 drizzle
 public/games
 public/steam
+cache
 
 # Logs
 logs
