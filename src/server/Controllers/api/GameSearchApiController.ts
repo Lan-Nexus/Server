@@ -72,14 +72,6 @@ export default class SearchController extends PageController {
                     // Save relative path for use in frontend/static serving
                     req.body[field] = `/games/images/uploads/${req.body[field]}`;
                 } catch (error) {
-                    console.error(`Error downloading image for ${field}:`, error);
-                    if (axios.isAxiosError(error) && error.response?.status === 404) {
-                        return res.status(404).json({
-                            error: `Image not found for ${field}`,
-                            field: field
-                        });
-                    }
-                    // For other errors, continue processing
                     if (!fs.existsSync(uploadDir)) {
                         fs.mkdirSync(uploadDir, { recursive: true });
                     }
