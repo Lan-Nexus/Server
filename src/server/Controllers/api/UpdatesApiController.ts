@@ -47,9 +47,35 @@ async function getLatestReleaseFromGitHub() {
  * Generates a platform-specific update feed file (yml format)
  * Modifies URLs to point to local server instead of GitHub
  */
-function generateUpdateFeed(release: any, platform: string, serverUrl: string): string {
+async function generateUpdateFeed(release: any, platform: string, serverUrl: string): Promise<string> {
   const version = release.tag_name.replace(/^v/, '');
   const releaseDate = release.published_at;
+
+  // Map platform to yml filename
+  const ymlFilename = platform === 'darwin' ? 'latest-mac.yml' :
+                      platform === 'linux' ? 'latest-linux.yml' :
+                      'latest.yml'; // win32
+
+  // Find the yml file in assets to get the SHA512
+  const ymlAsset = release.assets.find((a: any) => a.name === ymlFilename);
+  let sha512 = '';
+
+  if (ymlAsset) {
+    try {
+      // Download and parse the yml file from GitHub
+      const ymlResponse = await axios.get(ymlAsset.browser_download_url);
+      const ymlContent = ymlResponse.data;
+
+      // Extract sha512 from the yml (format: "sha512: base64string")
+      const sha512Match = ymlContent.match(/sha512:\s*(.+)/);
+      if (sha512Match) {
+        sha512 = sha512Match[1].trim();
+        console.log(`✅ Extracted SHA512 from GitHub ${ymlFilename}`);
+      }
+    } catch (error) {
+      console.error(`⚠️  Failed to fetch SHA512 from GitHub yml:`, error);
+    }
+  }
 
   // Find the appropriate asset for this platform
   let assetName = '';
@@ -81,14 +107,14 @@ function generateUpdateFeed(release: any, platform: string, serverUrl: string): 
   const fileSize = release.assets.find((a: any) => a.name === assetName)?.size || 0;
 
   // Generate local URL for the asset
-  const localUrl = `${serverUrl}/api/updates/download/${encodeURIComponent(assetName)}`;
+  const localUrl = `${serverUrl}/api/updates/${platform}/${encodeURIComponent(assetName)}`;
 
   // Generate yml format feed file
   // Format matches electron-updater expectations
   const yml = `version: ${version}
 releaseDate: ${releaseDate}
 path: ${assetName}
-sha512: ""
+sha512: ${sha512}
 url: ${localUrl}
 `;
 
@@ -121,7 +147,7 @@ export async function getUpdateFeed(req: Request, res: Response) {
     const serverUrl = `${protocol}://${host}`;
 
     // Generate feed file
-    const feedContent = generateUpdateFeed(release, platform, serverUrl);
+    const feedContent = await generateUpdateFeed(release, platform, serverUrl);
 
     // Send as text/plain (yml format)
     res.setHeader('Content-Type', 'text/plain');
