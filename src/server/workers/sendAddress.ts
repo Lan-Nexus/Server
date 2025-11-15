@@ -1,5 +1,12 @@
 import dgram from 'dgram';
 import SettingsModel from '../Models/Settings.js';
+import { readFileSync } from 'fs';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const packageJson = JSON.parse(readFileSync(join(__dirname, '../../../package.json'), 'utf-8'));
+const serverVersion = packageJson.version;
 
 if (process.env.IGNORE_BROADCAST === 'false') {
     const socket = dgram.createSocket('udp4');
@@ -29,7 +36,8 @@ if (process.env.IGNORE_BROADCAST === 'false') {
                     const response = {
                         protocol: protocol,
                         port: port,
-                        serverName: serverName
+                        serverName: serverName,
+                        version: serverVersion
                     };
 
                     const json = JSON.stringify(response);
