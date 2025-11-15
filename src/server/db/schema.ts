@@ -262,3 +262,20 @@ export const gameSessionsUpdateSchema = createUpdateSchema(gameSessionsTable, {
   ]).optional(),
   isActive: z.number().optional(),
 });
+
+// Settings table for server configuration
+export const settingsTable = mysqlTable('settings', {
+  id: serial().primaryKey(),
+  key: varchar('key', { length: 255 }).notNull().unique(),
+  value: text('value'),
+});
+
+export const settingsSelectSchema = createSelectSchema(settingsTable);
+export const settingsInsertSchema = createInsertSchema(settingsTable, {
+  key: z.string(),
+  value: z.string().optional(),
+});
+export const settingsUpdateSchema = createUpdateSchema(settingsTable, {
+  key: z.string().optional(),
+  value: z.string().optional(),
+});

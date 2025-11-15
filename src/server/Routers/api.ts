@@ -9,6 +9,7 @@ import UsersController from '../Controllers/api/UsersApiController.js';
 import CalendarApiController from '../Controllers/api/CalendarApiController.js';
 import GameSessionApiController from '../Controllers/api/GameSessionApiController.js';
 import * as UpdatesApiController from '../Controllers/api/UpdatesApiController.js';
+import SettingsApiController from '../Controllers/api/SettingsApiController.js';
 import Router from './Router.js';
 import multer from 'multer';
 import path from 'path';
@@ -279,5 +280,21 @@ authenticatedRouter.post('/updates/sync', (req: any, res: any) => {
   }
   UpdatesApiController.syncUpdates(req, res);
 });
+
+// Settings endpoints
+const settingsController = new SettingsApiController();
+
+// Public endpoint for server name (used by UDP broadcast and client)
+router.get('/settings/server-name', settingsController.getServerName.bind(settingsController));
+
+// Authenticated settings endpoints (admin only)
+new Router<SettingsApiController>({
+  router: authenticatedRouter,
+  controller: settingsController,
+  prefix: "/settings",
+})
+  .get({ handler: "getAll", permission: "settings:read" })
+  .get({ path: "/:key", handler: "get", permission: "settings:read" })
+  .put({ handler: "update", permission: "settings:update" });
 
 export default router;

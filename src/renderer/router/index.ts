@@ -14,6 +14,7 @@ import EventsView from '@/views/EventsView.vue'
 import UsersView from '@/views/UsersView.vue'
 import GameSessionsView from '@/views/GameSessionsView.vue'
 import DashboardView from '@/views/DashboardView.vue'
+import SettingsView from '@/views/SettingsView.vue'
 import { useAuthStore } from '@/stores/auth'
 
 
@@ -98,6 +99,11 @@ const router = createRouter({
       path: '/dashboard',
       name: 'dashboard',
       component: DashboardView,
+    },
+    {
+      path: '/settings',
+      name: 'settings',
+      component: SettingsView,
     },
   ],
 })
