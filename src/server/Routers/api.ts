@@ -275,7 +275,7 @@ router.get('/updates/download/:filename', UpdatesApiController.downloadFile);
 // Admin-only sync endpoint (authenticated)
 authenticatedRouter.post('/updates/sync', (req: any, res: any) => {
   // Check for admin permission
-  if (!hasPermission(req.user?.role || 'user', 'updates:sync')) {
+  if (!hasPermission(req.user, 'updates:sync')) {
     return res.status(403).json({ error: 'Insufficient permissions' });
   }
   UpdatesApiController.syncUpdates(req, res);
@@ -288,13 +288,25 @@ const settingsController = new SettingsApiController();
 router.get('/settings/server-name', settingsController.getServerName.bind(settingsController));
 
 // Authenticated settings endpoints (admin only)
-new Router<SettingsApiController>({
-  router: authenticatedRouter,
-  controller: settingsController,
-  prefix: "/settings",
-})
-  .get({ handler: "getAll", permission: "settings:read" })
-  .get({ path: "/:key", handler: "get", permission: "settings:read" })
-  .put({ handler: "update", permission: "settings:update" });
+authenticatedRouter.get('/settings', (req: any, res: any) => {
+  if (!hasPermission(req.user, 'settings:read')) {
+    return res.status(403).json({ error: 'Insufficient permissions' });
+  }
+  settingsController.getAll(req, res);
+});
+
+authenticatedRouter.get('/settings/:key', (req: any, res: any) => {
+  if (!hasPermission(req.user, 'settings:read')) {
+    return res.status(403).json({ error: 'Insufficient permissions' });
+  }
+  settingsController.get(req, res);
+});
+
+authenticatedRouter.put('/settings', (req: any, res: any) => {
+  if (!hasPermission(req.user, 'settings:update')) {
+    return res.status(403).json({ error: 'Insufficient permissions' });
+  }
+  settingsController.update(req, res);
+});
 
 export default router;

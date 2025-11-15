@@ -8,13 +8,23 @@ if (process.env.IGNORE_BROADCAST === 'false') {
     const broadcastPort = 50000;
 
     socket.on('message', async function (message, remote) {
+        console.log('📡 Received UDP broadcast from', remote.address + ':' + remote.port, '- Message:', message.toString());
         const msgStr = message.toString();
         try {
             const url = new URL(msgStr);
+            console.log('📋 Parsed URL:', url.protocol, url.hostname);
             if (url.protocol === 'lanlauncher:') {
                 if (url.hostname === 'get_ip') {
-                    // Fetch server name from database
-                    const serverName = await SettingsModel.getServerName();
+                    console.log('✅ Valid get_ip request, preparing response...');
+
+                    // Fetch server name from database (with fallback)
+                    let serverName = 'LAN Nexus Server';
+                    try {
+                        serverName = await SettingsModel.getServerName();
+                        console.log('📝 Server name from DB:', serverName);
+                    } catch (dbError) {
+                        console.error('⚠️  Failed to fetch server name from database, using default:', dbError);
+                    }
 
                     const response = {
                         protocol: protocol,
@@ -23,11 +33,13 @@ if (process.env.IGNORE_BROADCAST === 'false') {
                     };
 
                     const json = JSON.stringify(response);
+                    console.log('📤 Sending response to', remote.address + ':' + remote.port, '- Data:', json);
                     socket.send(json, 0, Buffer.byteLength(json), remote.port, remote.address);
-                    console.log('Sent response to', remote.address + ':' + remote.port + ' - ' + json);
+                    console.log('✅ Response sent successfully');
                 }
             }
         } catch (e) {
+            console.error('❌ Error handling broadcast message:', e);
             return;
         }
     });

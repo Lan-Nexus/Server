@@ -42,7 +42,7 @@ api.interceptors.response.use(
     error => {
         if (
             error.response &&
-            (error.response.status === 401 || error.response.status === 403) &&
+            error.response.status === 401 && // Only 401 (Unauthorized), not 403 (Forbidden)
             router.currentRoute.value.path !== '/login'
         ) {
             // Clear expired/invalid auth data
@@ -50,10 +50,12 @@ api.interceptors.response.use(
             localStorage.removeItem('token_expires');
             localStorage.removeItem('token_role');
             localStorage.removeItem('user_data');
-            
+
             const currentPath = router.currentRoute.value.fullPath;
             router.push({ path: '/login', query: { redirect: currentPath } });
         }
+        // Note: 403 errors are passed through without logout - they indicate
+        // valid authentication but insufficient permissions
         return Promise.reject(error);
     }
 );
