@@ -115,6 +115,10 @@ const server = ViteExpress.listen(app, port, () => {
     socket.join('game-sessions');
     console.log(`📡 Client ${socket.id} joined game-sessions room`);
 
+    // Join the game events room for real-time event updates
+    socket.join('game-events');
+    console.log(`📡 Client ${socket.id} joined game-events room`);
+
     // Handle game session events from clients
     socket.on('game_session_started', async (sessionData) => {
       console.log('🎮 Game session started:', sessionData);
