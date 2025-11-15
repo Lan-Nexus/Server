@@ -277,7 +277,7 @@ router.use(authenticatedRouter);
 // Update server endpoints (public, no auth required for clients to check updates)
 router.get('/updates/health', asyncHandler(healthCheck));
 router.get('/updates/:platform/latest.yml', asyncHandler(getUpdateFeed));
-router.get('/updates/download/:filename', asyncHandler(downloadFile));
+router.get('/updates/:platform/:filename', asyncHandler(downloadFile));
 
 // Admin-only sync endpoint (authenticated)
 authenticatedRouter.post('/updates/sync', asyncHandler(async (req: any, res: any) => {
