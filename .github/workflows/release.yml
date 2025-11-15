@@ -9,6 +9,7 @@ on:
 permissions:
   contents: write
   actions: read
+  pull-requests: write
 
 jobs:
   build-and-release:
@@ -64,10 +65,63 @@ jobs:
       - name: Copy .env.example to build directory
         run: cp .env.example dist/.env
 
+      - name: Copy package files and Dockerfile to build directory
+        run: |
+          cp package.json dist/package.json
+          cp package-lock.json dist/package-lock.json
+          cp Dockerfile dist/Dockerfile
+
       - name: Zip Build
         run: |
           cd dist
           zip -r ../server-build.zip .
+
+      - name: Upload build artifact for PR
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-build-pr-${{ github.event.pull_request.number }}
+          path: server-build.zip
+          retention-days: 30
+
+      - name: Comment on PR with build artifact
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const version = '${{ steps.get_version.outputs.version }}';
+            const runId = context.runId;
+            const repo = context.repo;
+            
+            const stats = fs.statSync('server-build.zip');
+            const fileSizeInMB = (stats.size / (1024 * 1024)).toFixed(2);
+            
+            const comment = `## 🚀 Server Build Ready
+            
+            **Version:** \`${version}\`
+            **Build Size:** ${fileSizeInMB} MB
+            
+            📦 **Download Build Artifact:**
+            [server-build-pr-${{ github.event.pull_request.number }}](https://github.com/${repo.owner}/${repo.repo}/actions/runs/${runId})
+            
+            ### Included Files:
+            - ✅ Compiled server code
+            - ✅ \`package.json\`
+            - ✅ \`package-lock.json\`
+            - ✅ \`Dockerfile\`
+            - ✅ \`.env.example\`
+            
+            ---
+            *Build completed successfully* ✨`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: repo.owner,
+              repo: repo.repo,
+              body: comment
+            });
 
       - name: Upload release assets
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
