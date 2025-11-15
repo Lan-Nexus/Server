@@ -6,6 +6,7 @@ import {
 import GameEventModel from "../../Models/GameEvent.js";
 import { Request, Response } from "express";
 import { PageController } from "../PageController.js";
+import { GameEventEvents, type GameEventEventData } from "../../websocket/gameEventEvents.js";
 
 export default class GameEventsController extends PageController {
   constructor() {
@@ -26,6 +27,20 @@ export default class GameEventsController extends PageController {
       const results = await this.model.create(data);
       const finalResults =
         (await this.postCreate?.(req, res, results)) ?? results;
+      
+      // Emit WebSocket event for real-time updates
+      if (finalResults) {
+        console.log('🎯 [GameEventsController] Emitting event_created for event ID:', finalResults.id);
+        GameEventEvents.eventCreated(this.convertToEventData(finalResults));
+        
+        // Update all events list
+        const allEvents = await GameEventModel.list();
+        console.log('🎯 [GameEventsController] Emitting events_list_updated with', allEvents.length, 'events');
+        GameEventEvents.eventsListUpdated(allEvents.map(e => this.convertToEventData(e)));
+      } else {
+        console.log('🎯 [GameEventsController] WARNING: No finalResults to emit');
+      }
+      
       res.json(finalResults);
     } catch (error) {
       console.error("Error creating event:", error);
@@ -49,6 +64,20 @@ export default class GameEventsController extends PageController {
       const updatedEvent = await this.model.read(data.id);
       const finalData =
         (await this.postUpdate?.(req, res, updatedEvent)) ?? updatedEvent;
+      
+      // Emit WebSocket event for real-time updates
+      if (finalData) {
+        console.log('🎯 [GameEventsController] Emitting event_updated for event ID:', finalData.id);
+        GameEventEvents.eventUpdated(this.convertToEventData(finalData));
+        
+        // Update all events list
+        const allEvents = await GameEventModel.list();
+        console.log('🎯 [GameEventsController] Emitting events_list_updated with', allEvents.length, 'events');
+        GameEventEvents.eventsListUpdated(allEvents.map(e => this.convertToEventData(e)));
+      } else {
+        console.log('🎯 [GameEventsController] WARNING: No finalData to emit');
+      }
+      
       res.json(finalData);
     } catch (error) {
       console.error("Error updating event:", error);
@@ -96,6 +125,16 @@ export default class GameEventsController extends PageController {
       }
       await this.postDelete?.(req, res, results);
       await this.model.delete(id);
+      
+      // Emit WebSocket event for real-time updates
+      console.log('🎯 [GameEventsController] Emitting event_deleted for event ID:', id);
+      GameEventEvents.eventDeleted(id);
+      
+      // Update all events list
+      const allEvents = await GameEventModel.list();
+      console.log('🎯 [GameEventsController] Emitting events_list_updated with', allEvents.length, 'events');
+      GameEventEvents.eventsListUpdated(allEvents.map(e => this.convertToEventData(e)));
+      
       res.json({ success: true, message: "Event deleted successfully" });
     } catch (error) {
       console.error("Error deleting event:", error);
@@ -149,6 +188,21 @@ export default class GameEventsController extends PageController {
       await GameEventModel.updateStatus(id, status);
       const updatedEvent = await GameEventModel.read(id);
 
+      // Emit WebSocket event for real-time updates
+      if (updatedEvent) {
+        console.log('🎯 [GameEventsController] Emitting event_status_updated for event ID:', id, 'status:', status);
+        GameEventEvents.eventStatusUpdated(id, status);
+        console.log('🎯 [GameEventsController] Emitting event_updated for event ID:', id);
+        GameEventEvents.eventUpdated(this.convertToEventData(updatedEvent));
+        
+        // Update all events list
+        const allEvents = await GameEventModel.list();
+        console.log('🎯 [GameEventsController] Emitting events_list_updated with', allEvents.length, 'events');
+        GameEventEvents.eventsListUpdated(allEvents.map(e => this.convertToEventData(e)));
+      } else {
+        console.log('🎯 [GameEventsController] WARNING: No updatedEvent to emit');
+      }
+
       res.json(updatedEvent);
     } catch (error) {
       console.error("Error updating event status:", error);
@@ -194,5 +248,21 @@ export default class GameEventsController extends PageController {
     }
 
     return body;
+  }
+
+  // Helper method to convert event to WebSocket event data format
+  private convertToEventData(event: any): GameEventEventData {
+    return {
+      id: event.id,
+      gameId: event.gameId,
+      gameName: event.gameName,
+      startTime: event.startTime,
+      endTime: event.endTime,
+      status: event.status,
+      description: event.description,
+      gameIcon: event.gameIcon,
+      gameLogo: event.gameLogo,
+      gameImageCard: event.gameImageCard,
+    };
   }
 }
