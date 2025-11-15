@@ -71,15 +71,10 @@ jobs:
           cp package-lock.json dist/package-lock.json
           cp Dockerfile dist/Dockerfile
 
-      - name: Zip Build
-        run: |
-          cd dist
-          zip -r ../server-build.zip .
-
       - name: Get build size
         id: build_size
         run: |
-          size=$(du -sh server-build.zip | cut -f1)
+          size=$(du -sh dist | cut -f1)
           echo "size=$size" >> "$GITHUB_OUTPUT"
           echo "Build size: $size"
 
@@ -88,7 +83,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: server-build-pr-${{ github.event.pull_request.number }}
-          path: server-build.zip
+          path: dist/
           retention-days: 30
 
       - name: Get artifact download URL
@@ -148,6 +143,12 @@ jobs:
               repo: repo.repo,
               body: comment
             });
+
+      - name: Zip Build for Release
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+        run: |
+          cd dist
+          zip -r ../server-build.zip .
 
       - name: Upload release assets
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
