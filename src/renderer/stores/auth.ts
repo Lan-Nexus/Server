@@ -195,11 +195,13 @@ export const useAuthStore = defineStore('auth', () => {
       await api.get('/api/users/me') // This endpoint should return current user info
       return true
     } catch (err: any) {
-      if (err.response?.status === 401 || err.response?.status === 403) {
+      // Only clear auth on 401 (Unauthorized - invalid token)
+      // Don't clear on 403 (Forbidden - valid token, insufficient permissions)
+      if (err.response?.status === 401) {
         clearAuth()
         return false
       }
-      // Other errors don't necessarily mean token is invalid
+      // 403 or other errors don't necessarily mean token is invalid
       return true
     }
   }

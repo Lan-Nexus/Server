@@ -44,8 +44,10 @@ if (!process.env.STEAM_API_KEY) {
 if (process.env.NODE_ENV === 'production') {
   ViteExpress.config({
     inlineViteConfig: {
-      build: { outDir: "public" }
-    }
+      build: { outDir: "public" },
+
+    },
+    mode: 'production'
   });
 }
 

@@ -125,6 +125,17 @@ function getNotificationBorderColor(type: string): string {
             </router-link>
           </li>
 
+          <!-- Settings Link -->
+          <li>
+            <router-link
+              :to="{ name: 'settings' }"
+              class="btn btn-ghost gap-2 hover:bg-base-content/10 hover:text-base-content transition-all duration-200"
+              active-class="bg-base-content/20 text-base-content"
+            >
+              <i class="fas fa-cog"></i>
+              <span class="hidden sm:inline">Settings</span>
+            </router-link>
+          </li>
 
         </ul>
       </div>

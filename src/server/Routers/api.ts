@@ -8,11 +8,20 @@ import gameEventsController from '../Controllers/api/GameEventsApiController.js'
 import UsersController from '../Controllers/api/UsersApiController.js';
 import CalendarApiController from '../Controllers/api/CalendarApiController.js';
 import GameSessionApiController from '../Controllers/api/GameSessionApiController.js';
+import { healthCheck, getUpdateFeed, downloadFile, syncUpdates } from '../Controllers/api/UpdatesApiController.js';
+import SettingsApiController from '../Controllers/api/SettingsApiController.js';
 import Router from './Router.js';
 import multer from 'multer';
 import path from 'path';
 import { jwtAuth } from '../jwt.js';
 import { hasPermission } from '../roles.js';
+
+// Async handler wrapper to properly handle promise rejections
+const asyncHandler = (fn: (req: Request, res: Response) => Promise<any>) => {
+  return (req: Request, res: Response, next: express.NextFunction) => {
+    Promise.resolve(fn(req, res)).catch(next);
+  };
+};
 
 // Simple rate limiting store
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
@@ -264,5 +273,47 @@ authenticatedRouter.post('/calendar/fetch', (req: any, res: any, next: any) => {
 
 // Mount the authenticated router
 router.use(authenticatedRouter);
+
+// Update server endpoints (public, no auth required for clients to check updates)
+router.get('/updates/health', asyncHandler(healthCheck));
+router.get('/updates/:platform/latest.yml', asyncHandler(getUpdateFeed));
+router.get('/updates/:platform/:filename', asyncHandler(downloadFile));
+
+// Admin-only sync endpoint (authenticated)
+authenticatedRouter.post('/updates/sync', asyncHandler(async (req: any, res: any) => {
+  // Check for admin permission
+  if (!hasPermission(req.user, 'updates:sync')) {
+    return res.status(403).json({ error: 'Insufficient permissions' });
+  }
+  await syncUpdates(req, res);
+}));
+
+// Settings endpoints
+const settingsController = new SettingsApiController();
+
+// Public endpoint for server name (used by UDP broadcast and client)
+router.get('/settings/server-name', settingsController.getServerName.bind(settingsController));
+
+// Authenticated settings endpoints (admin only)
+authenticatedRouter.get('/settings', (req: any, res: any) => {
+  if (!hasPermission(req.user, 'settings:read')) {
+    return res.status(403).json({ error: 'Insufficient permissions' });
+  }
+  settingsController.getAll(req, res);
+});
+
+authenticatedRouter.get('/settings/:key', (req: any, res: any) => {
+  if (!hasPermission(req.user, 'settings:read')) {
+    return res.status(403).json({ error: 'Insufficient permissions' });
+  }
+  settingsController.get(req, res);
+});
+
+authenticatedRouter.put('/settings', (req: any, res: any) => {
+  if (!hasPermission(req.user, 'settings:update')) {
+    return res.status(403).json({ error: 'Insufficient permissions' });
+  }
+  settingsController.update(req, res);
+});
 
 export default router;

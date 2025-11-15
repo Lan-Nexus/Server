@@ -71,6 +71,9 @@ const roles: Record<string, string[]> = {
     'game-sessions:create',
     'game-sessions:update',
     'game-sessions:delete',
+    'settings:read',
+    'settings:update',
+    'updates:sync',
   ],
 }
 
