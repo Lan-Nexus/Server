@@ -106,6 +106,17 @@ import {
   UpcomingEventsCard,
   ConnectionStatus
 } from '@/components/dashboard'
+import dayjs from 'dayjs'
+import relativeTime from 'dayjs/plugin/relativeTime'
+import duration from 'dayjs/plugin/duration'
+import isSameOrAfter from 'dayjs/plugin/isSameOrAfter'
+import isSameOrBefore from 'dayjs/plugin/isSameOrBefore'
+
+// Configure Day.js plugins
+dayjs.extend(relativeTime)
+dayjs.extend(duration)
+dayjs.extend(isSameOrAfter)
+dayjs.extend(isSameOrBefore)
 
 
 const gameSessionsStore = useGameSessionsStore()
@@ -118,10 +129,12 @@ const fullscreenStore = useFullscreenStore()
 const isLoading = ref(false)
 const connectionStatus = ref<'connected' | 'disconnected'>('connected')
 const countdown = ref(30)
+const currentTime = ref(new Date())
 
 // Auto-refresh intervals
 let refreshInterval: number | null = null
 let countdownInterval: number | null = null
+let timeUpdateInterval: number | null = null
 
 // Computed properties
 const activeSessions = computed(() => gameSessionsStore.activeSessions)
@@ -157,26 +170,21 @@ const gameStatusText = computed(() => {
 })
 
 const todaySessionCount = computed(() => {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  const today = dayjs().startOf('day')
 
   return gameSessionsStore.sessions.filter(session => {
-    const sessionDate = new Date(session.startTime)
-    return sessionDate >= today
+    const sessionDate = dayjs(session.startTime)
+    return sessionDate.isSameOrAfter(today)
   }).length
 })
 
 const sessionTrendText = computed(() => {
-  const yesterday = new Date()
-  yesterday.setDate(yesterday.getDate() - 1)
-  yesterday.setHours(0, 0, 0, 0)
-
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  const yesterday = dayjs().subtract(1, 'day').startOf('day')
+  const today = dayjs().startOf('day')
 
   const yesterdayCount = gameSessionsStore.sessions.filter(session => {
-    const sessionDate = new Date(session.startTime)
-    return sessionDate >= yesterday && sessionDate < today
+    const sessionDate = dayjs(session.startTime)
+    return sessionDate.isSameOrAfter(yesterday) && sessionDate.isBefore(today)
   }).length
 
   const todayCount = todaySessionCount.value
@@ -202,12 +210,11 @@ const averageSessionTime = computed(() => {
 })
 
 const popularGames = computed(() => {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  const today = dayjs().startOf('day')
 
   const todaySessions = gameSessionsStore.sessions.filter(session => {
-    const sessionDate = new Date(session.startTime)
-    return sessionDate >= today
+    const sessionDate = dayjs(session.startTime)
+    return sessionDate.isSameOrAfter(today)
   })
 
   const gameStats: Record<number, {
@@ -237,13 +244,11 @@ const popularGames = computed(() => {
 })
 
 const popularGamesLast30Days = computed(() => {
-  const thirtyDaysAgo = new Date()
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-  thirtyDaysAgo.setHours(0, 0, 0, 0)
+  const thirtyDaysAgo = dayjs().subtract(30, 'day').startOf('day')
 
   const recentSessions = gameSessionsStore.sessions.filter(session => {
-    const sessionDate = new Date(session.startTime)
-    return sessionDate >= thirtyDaysAgo
+    const sessionDate = dayjs(session.startTime)
+    return sessionDate.isSameOrAfter(thirtyDaysAgo)
   })
 
   const gameStats: Record<number, {
@@ -284,8 +289,8 @@ const upcomingEvents = computed(() => {
     const computedStatus = computeEventStatus(event.startTime, event.endTime, event.status)
     return computedStatus === 'upcoming'
   }).sort((a, b) => {
-    const aTime = new Date(a.startTime).getTime()
-    const bTime = new Date(b.startTime).getTime()
+    const aTime = dayjs(a.startTime).valueOf()
+    const bTime = dayjs(b.startTime).valueOf()
     return aTime - bTime
   })
 })
@@ -331,7 +336,7 @@ const recentSessions = computed(() => {
     .sort((a, b) => {
       const aTime = a.endTime || a.startTime
       const bTime = b.endTime || b.startTime
-      return new Date(bTime).getTime() - new Date(aTime).getTime()
+      return dayjs(bTime).valueOf() - dayjs(aTime).valueOf()
     })
     .slice(0, 10)
 
@@ -364,14 +369,15 @@ function getGameName(gameId: number): string {
 }
 
 function formatDuration(seconds: number): string {
+  const dur = dayjs.duration(seconds, 'seconds')
+  
   if (seconds < 60) return `${seconds}s`
 
-  const minutes = Math.floor(seconds / 60)
-  const hours = Math.floor(minutes / 60)
+  const hours = Math.floor(dur.asHours())
+  const minutes = dur.minutes()
 
   if (hours > 0) {
-    const remainingMinutes = minutes % 60
-    return `${hours}h ${remainingMinutes}m`
+    return `${hours}h ${minutes}m`
   }
 
   return `${minutes}m`
@@ -383,22 +389,26 @@ function formatSessionDuration(session: GameSession): string {
 }
 
 function calculateSessionDuration(session: GameSession): number {
-  const startTime = new Date(session.startTime)
-  const endTime = session.endTime ? new Date(session.endTime) : new Date()
-  return Math.floor((endTime.getTime() - startTime.getTime()) / 1000)
+  const startTime = dayjs(session.startTime)
+  const endTime = session.endTime ? dayjs(session.endTime) : dayjs(currentTime.value)
+  return endTime.diff(startTime, 'second')
 }
 
 function formatRelativeTime(dateString: string): string {
-  const now = new Date()
-  const date = new Date(dateString)
-  const diffInSeconds = Math.floor((date.getTime() - now.getTime()) / 1000)
+  const now = dayjs(currentTime.value)
+  const date = dayjs(dateString)
+  const diffInSeconds = date.diff(now, 'second')
 
   // For future events (positive difference)
   if (diffInSeconds > 0) {
-    if (diffInSeconds < 3600) return `in ${Math.floor(diffInSeconds / 60)}m`
-    if (diffInSeconds < 86400) return `in ${Math.floor(diffInSeconds / 3600)}h`
-    if (diffInSeconds < 604800) return `in ${Math.floor(diffInSeconds / 86400)}d`
-    return date.toLocaleDateString()
+    const minutes = Math.floor(diffInSeconds / 60)
+    const hours = Math.floor(diffInSeconds / 3600)
+    const days = Math.floor(diffInSeconds / 86400)
+    
+    if (diffInSeconds < 3600) return `in ${minutes}m`
+    if (diffInSeconds < 86400) return `in ${hours}h`
+    if (diffInSeconds < 604800) return `in ${days}d`
+    return date.format('MMM D, YYYY')
   }
 
   // For past events (negative difference)
@@ -407,23 +417,23 @@ function formatRelativeTime(dateString: string): string {
   if (pastSeconds < 3600) return `${Math.floor(pastSeconds / 60)}m ago`
   if (pastSeconds < 86400) return `${Math.floor(pastSeconds / 3600)}h ago`
 
-  return date.toLocaleDateString()
+  return date.format('MMM D, YYYY')
 }
 
 function formatEventTime(dateString: string): string {
-  const date = new Date(dateString)
-  return date.toLocaleDateString() + ' at ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  return dayjs(dateString).format('MMM D, YYYY [at] h:mm A')
 }
 
 function getEventTimeRemaining(endTime: string): string {
-  const now = new Date()
-  const end = new Date(endTime)
-  const diffInSeconds = Math.floor((end.getTime() - now.getTime()) / 1000)
+  const now = dayjs(currentTime.value)
+  const end = dayjs(endTime)
+  const diffInSeconds = end.diff(now, 'second')
 
   if (diffInSeconds <= 0) return 'Event ended'
 
-  const hours = Math.floor(diffInSeconds / 3600)
-  const minutes = Math.floor((diffInSeconds % 3600) / 60)
+  const dur = dayjs.duration(diffInSeconds, 'seconds')
+  const hours = Math.floor(dur.asHours())
+  const minutes = dur.minutes()
 
   if (hours > 0) {
     return `${hours}h ${minutes}m`
@@ -488,6 +498,11 @@ const WEBSOCKET_REFRESH_INTERVAL = 120000; // 2 minutes
 const POLLING_REFRESH_INTERVAL = 30000;    // 30 seconds
 
 function startAutoRefresh() {
+  // Start time update interval for real-time time displays
+  timeUpdateInterval = setInterval(() => {
+    currentTime.value = new Date()
+  }, 1000)
+
   // If WebSocket is enabled and connected, reduce refresh frequency for non-realtime data
   const refreshDelay = gameSessionsStore.isWebSocketEnabled && gameSessionsStore.isConnected
     ? WEBSOCKET_REFRESH_INTERVAL
@@ -535,6 +550,11 @@ function stopAutoRefresh() {
   if (countdownInterval) {
     clearInterval(countdownInterval)
     countdownInterval = null
+  }
+
+  if (timeUpdateInterval) {
+    clearInterval(timeUpdateInterval)
+    timeUpdateInterval = null
   }
 }
 

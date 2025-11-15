@@ -10,6 +10,19 @@ export interface GameSessionEventData {
   durationSeconds?: number
 }
 
+export interface GameEventEventData {
+  id?: number
+  gameId: number
+  gameName: string
+  startTime: string | Date
+  endTime: string | Date
+  status: 'active' | 'cancelled'
+  description?: string
+  gameIcon?: string
+  gameLogo?: string
+  gameImageCard?: string
+}
+
 export interface WebSocketCallbacks {
   onSessionStarted?: (session: GameSessionEventData) => void
   onSessionEnded?: (session: GameSessionEventData) => void
@@ -17,6 +30,11 @@ export interface WebSocketCallbacks {
   onSessionDeleted?: (data: { id: number }) => void
   onClientSessionsStopped?: (data: { clientId: string; sessionIds: number[] }) => void
   onActiveSessionsUpdated?: (data: { sessions: GameSessionEventData[] }) => void
+  onEventCreated?: (event: GameEventEventData) => void
+  onEventUpdated?: (event: GameEventEventData) => void
+  onEventDeleted?: (data: { id: number }) => void
+  onEventStatusUpdated?: (data: { id: number; status: 'active' | 'cancelled' }) => void
+  onEventsListUpdated?: (data: { events: GameEventEventData[] }) => void
   onConnected?: () => void
   onDisconnected?: () => void
   onError?: (error: any) => void
@@ -178,6 +196,32 @@ class WebSocketManager {
     this.socket.on('active_sessions_updated', (data: { sessions: GameSessionEventData[] }) => {
       console.log('📥 Received active_sessions_updated event:', data.sessions.length, 'sessions')
       this.callbacks.onActiveSessionsUpdated?.(data)
+    })
+
+    // Game event events
+    this.socket.on('event_created', (event: GameEventEventData) => {
+      console.log('📥 Received event_created event:', event)
+      this.callbacks.onEventCreated?.(event)
+    })
+
+    this.socket.on('event_updated', (event: GameEventEventData) => {
+      console.log('📥 Received event_updated event:', event)
+      this.callbacks.onEventUpdated?.(event)
+    })
+
+    this.socket.on('event_deleted', (data: { id: number }) => {
+      console.log('📥 Received event_deleted event:', data)
+      this.callbacks.onEventDeleted?.(data)
+    })
+
+    this.socket.on('event_status_updated', (data: { id: number; status: 'active' | 'cancelled' }) => {
+      console.log('📥 Received event_status_updated event:', data)
+      this.callbacks.onEventStatusUpdated?.(data)
+    })
+
+    this.socket.on('events_list_updated', (data: { events: GameEventEventData[] }) => {
+      console.log('📥 Received events_list_updated event:', data.events.length, 'events')
+      this.callbacks.onEventsListUpdated?.(data)
     })
   }
 
