@@ -71,17 +71,19 @@ jobs:
           cp package-lock.json dist/package-lock.json
           cp Dockerfile dist/Dockerfile
 
-      - name: Zip Build
+      - name: Get build size
+        id: build_size
         run: |
-          cd dist
-          zip -r ../server-build.zip .
+          size=$(du -sh dist | cut -f1)
+          echo "size=$size" >> "$GITHUB_OUTPUT"
+          echo "Build size: $size"
 
       - name: Upload build artifact for PR
         if: github.event_name == 'pull_request'
         uses: actions/upload-artifact@v4
         with:
           name: server-build-pr-${{ github.event.pull_request.number }}
-          path: server-build.zip
+          path: dist/
           retention-days: 30
 
       - name: Comment on PR with build artifact
@@ -90,21 +92,21 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const fs = require('fs');
             const version = '${{ steps.get_version.outputs.version }}';
+            const buildSize = '${{ steps.build_size.outputs.size }}';
             const runId = context.runId;
             const repo = context.repo;
-            
-            const stats = fs.statSync('server-build.zip');
-            const fileSizeInMB = (stats.size / (1024 * 1024)).toFixed(2);
+            const prNumber = context.issue.number;
             
             const comment = `## 🚀 Server Build Ready
             
             **Version:** \`${version}\`
-            **Build Size:** ${fileSizeInMB} MB
+            **Build Size:** ${buildSize}
             
-            📦 **Download Build Artifact:**
-            [server-build-pr-${{ github.event.pull_request.number }}](https://github.com/${repo.owner}/${repo.repo}/actions/runs/${runId})
+            📦 **Download Build:**
+            [Click here to download server-build-pr-${prNumber}](https://github.com/${repo.owner}/${repo.repo}/actions/runs/${runId})
+            
+            > Click on the link above, scroll down to the "Artifacts" section, and click on the artifact to download.
             
             ### Included Files:
             - ✅ Compiled server code
@@ -122,6 +124,12 @@ jobs:
               repo: repo.repo,
               body: comment
             });
+
+      - name: Zip Build for Release
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+        run: |
+          cd dist
+          zip -r ../server-build.zip .
 
       - name: Upload release assets
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
