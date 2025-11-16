@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "mysql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1763212478056,
+      "tag": "0000_clean_bruce_banner",
+      "breakpoints": true
+    }
+  ]
+}

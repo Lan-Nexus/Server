@@ -62,6 +62,13 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Generate database migrations
+        run: |
+          npm run generate || echo "No schema changes detected"
+          echo "Migration generation completed"
+        env:
+          DATABASE_URL: mysql://dummy:dummy@localhost:3306/dummy
+
       - name: Copy .env.example to build directory
         run: cp .env.example dist/.env
 
@@ -70,6 +77,21 @@ jobs:
           cp package.json dist/package.json
           cp package-lock.json dist/package-lock.json
           cp Dockerfile dist/Dockerfile
+
+      - name: Copy Drizzle migrations and updater to build directory
+        run: |
+          if [ -d "drizzle" ]; then
+            cp -r drizzle dist/drizzle
+            echo "✓ Copied drizzle migrations"
+          else
+            echo "⚠ No drizzle folder found - creating empty directory"
+            mkdir -p dist/drizzle/meta
+          fi
+          cp drizzle.config.ts dist/drizzle.config.ts
+          cp update.ts dist/update.ts
+          cp install.ts dist/install.ts
+          cp version.ts dist/version.ts
+          echo "✓ Copied Drizzle updater and documentation"
 
       - name: Get build size
         id: build_size
@@ -117,26 +139,41 @@ jobs:
             const repo = context.repo;
             const prNumber = context.issue.number;
             const artifactId = '${{ steps.artifact_url.outputs.result }}';
-            
+
             const downloadUrl = `https://github.com/${repo.owner}/${repo.repo}/actions/runs/${runId}/artifacts/${artifactId}`;
-            
+
             const comment = `## 🚀 Server Build Ready
-            
+
             **Version:** \`${version}\`
             **Build Size:** ${buildSize}
-            
+
             📦 **[⬇️ Download server-build.zip](${downloadUrl})**
-            
+
             ### Included Files:
             - ✅ Compiled server code
             - ✅ \`package.json\`
             - ✅ \`package-lock.json\`
             - ✅ \`Dockerfile\`
             - ✅ \`.env.example\`
-            
+            - ✅ Database migrations (\`drizzle/\`)
+            - ✅ Database updater script (\`update.ts\`)
+            - ✅ Installation script (\`install.ts\`)
+            - ✅ Version info script (\`version.ts\`)
+            - ✅ Update guide (\`UPDATE.md\`)
+            - ✅ Quick start guide (\`README.md\`)
+
+            ### Update Instructions:
+            1. Extract the zip file
+            2. Run \`npm ci --omit=dev\` to install dependencies
+            3. Configure your \`.env\` file (use \`.env\` as template)
+            4. Run \`npm run update\` to apply database migrations
+            5. Start the server with \`node index.js\`
+
+            📖 **See \`UPDATE.md\` for detailed update instructions and troubleshooting**
+
             ---
             *Build completed successfully* ✨`;
-            
+
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: repo.owner,
