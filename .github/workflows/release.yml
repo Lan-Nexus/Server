@@ -91,8 +91,6 @@ jobs:
           cp update.ts dist/update.ts
           cp install.ts dist/install.ts
           cp version.ts dist/version.ts
-          cp UPDATE.md dist/UPDATE.md
-          cp RELEASE_README.md dist/README.md
           echo "✓ Copied Drizzle updater and documentation"
 
       - name: Get build size
@@ -141,16 +139,16 @@ jobs:
             const repo = context.repo;
             const prNumber = context.issue.number;
             const artifactId = '${{ steps.artifact_url.outputs.result }}';
-            
+
             const downloadUrl = `https://github.com/${repo.owner}/${repo.repo}/actions/runs/${runId}/artifacts/${artifactId}`;
-            
+
             const comment = `## 🚀 Server Build Ready
-            
+
             **Version:** \`${version}\`
             **Build Size:** ${buildSize}
-            
+
             📦 **[⬇️ Download server-build.zip](${downloadUrl})**
-            
+
             ### Included Files:
             - ✅ Compiled server code
             - ✅ \`package.json\`
@@ -163,19 +161,19 @@ jobs:
             - ✅ Version info script (\`version.ts\`)
             - ✅ Update guide (\`UPDATE.md\`)
             - ✅ Quick start guide (\`README.md\`)
-            
+
             ### Update Instructions:
             1. Extract the zip file
             2. Run \`npm ci --omit=dev\` to install dependencies
             3. Configure your \`.env\` file (use \`.env\` as template)
             4. Run \`npm run update\` to apply database migrations
             5. Start the server with \`node index.js\`
-            
+
             📖 **See \`UPDATE.md\` for detailed update instructions and troubleshooting**
-            
+
             ---
             *Build completed successfully* ✨`;
-            
+
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: repo.owner,
