@@ -17,6 +17,8 @@
     "generate:undo": "drizzle-kit drop",
     "migrate": "drizzle-kit migrate",
     "install": "tsx install.ts",
+    "update": "tsx update.ts",
+    "version": "tsx version.ts",
     "dev": "nodemon -w src/server -x tsx src/server/index.ts",
     "dev:info": "tsx src/server/info.ts",
     "dev:renderer": "vite",
