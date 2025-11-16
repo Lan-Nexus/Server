@@ -1,11 +1,10 @@
 import dgram from 'dgram';
 import SettingsModel from '../Models/Settings.js';
 import { readFileSync } from 'fs';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
+import { join } from 'path';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const packageJson = JSON.parse(readFileSync(join(__dirname, '../../../package.json'), 'utf-8'));
+// Use process.cwd() to get the server root directory (where the app is run from)
+const packageJson = JSON.parse(readFileSync(join(process.cwd(), 'package.json'), 'utf-8'));
 const serverVersion = packageJson.version;
 
 if (process.env.IGNORE_BROADCAST === 'false') {
