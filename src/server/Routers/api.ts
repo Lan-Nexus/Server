@@ -271,13 +271,19 @@ authenticatedRouter.post('/calendar/fetch', (req: any, res: any, next: any) => {
   });
 });
 
-// Mount the authenticated router
-router.use(authenticatedRouter);
+// Settings endpoints
+const settingsController = new SettingsApiController();
+
+// Public endpoint for server name (used by UDP broadcast and client)
+router.get('/settings/server-name', settingsController.getServerName.bind(settingsController));
+
+// Public endpoint for branding (LAN name and logo - used by clients)
+router.get('/settings/branding', settingsController.getBranding.bind(settingsController));
 
 // Update server endpoints (public, no auth required for clients to check updates)
 router.get('/updates/health', asyncHandler(healthCheck));
 router.get('/updates/:platform/latest.yml', asyncHandler(getUpdateFeed));
-router.get('/updates/:platform/:filename', asyncHandler(downloadFile));
+router.get('/updates/download/:filename', asyncHandler(downloadFile));
 
 // Admin-only sync endpoint (authenticated)
 authenticatedRouter.post('/updates/sync', asyncHandler(async (req: any, res: any) => {
@@ -287,12 +293,6 @@ authenticatedRouter.post('/updates/sync', asyncHandler(async (req: any, res: any
   }
   await syncUpdates(req, res);
 }));
-
-// Settings endpoints
-const settingsController = new SettingsApiController();
-
-// Public endpoint for server name (used by UDP broadcast and client)
-router.get('/settings/server-name', settingsController.getServerName.bind(settingsController));
 
 // Authenticated settings endpoints (admin only)
 authenticatedRouter.get('/settings', (req: any, res: any) => {
@@ -315,5 +315,18 @@ authenticatedRouter.put('/settings', (req: any, res: any) => {
   }
   settingsController.update(req, res);
 });
+
+authenticatedRouter.post('/settings/logo', 
+  settingsController.getUploadMiddleware(),
+  (req: any, res: any) => {
+    if (!hasPermission(req.user, 'settings:update')) {
+      return res.status(403).json({ error: 'Insufficient permissions' });
+    }
+    settingsController.uploadLogo(req, res);
+  }
+);
+
+// Mount the authenticated router AFTER all public routes are defined
+router.use(authenticatedRouter);
 
 export default router;

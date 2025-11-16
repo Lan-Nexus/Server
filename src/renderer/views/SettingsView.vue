@@ -3,8 +3,12 @@ import { ref, onMounted } from 'vue';
 import api from '../utls/api';
 
 const serverName = ref('');
+const logoUrl = ref('');
+const logoFile = ref<File | null>(null);
+const logoPreview = ref('');
 const isLoading = ref(false);
 const isSaving = ref(false);
+const isUploadingLogo = ref(false);
 const showSuccess = ref(false);
 const showError = ref(false);
 const errorMessage = ref('');
@@ -18,6 +22,7 @@ async function loadSettings() {
   try {
     const response = await api.get('/api/settings');
     serverName.value = response.data.server_name || 'LAN Nexus Server';
+    logoUrl.value = response.data.server_logo || '';
   } catch (error) {
     console.error('Failed to load settings:', error);
     serverName.value = 'LAN Nexus Server';
@@ -54,6 +59,67 @@ async function saveSettings() {
   } finally {
     isSaving.value = false;
   }
+}
+
+function handleLogoSelect(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  
+  if (file) {
+    logoFile.value = file;
+    
+    // Create preview URL
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      logoPreview.value = e.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  }
+}
+
+async function uploadLogo() {
+  if (!logoFile.value) return;
+
+  isUploadingLogo.value = true;
+  showSuccess.value = false;
+  showError.value = false;
+
+  try {
+    const formData = new FormData();
+    formData.append('logo', logoFile.value);
+
+    const response = await api.post('/api/settings/logo', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+
+    logoUrl.value = response.data.logo;
+    logoPreview.value = '';
+    logoFile.value = null;
+
+    console.log('✅ Logo uploaded successfully');
+    showSuccess.value = true;
+
+    setTimeout(() => {
+      showSuccess.value = false;
+    }, 3000);
+  } catch (error) {
+    console.error('Failed to upload logo:', error);
+    errorMessage.value = error instanceof Error ? error.message : 'Failed to upload logo';
+    showError.value = true;
+
+    setTimeout(() => {
+      showError.value = false;
+    }, 5000);
+  } finally {
+    isUploadingLogo.value = false;
+  }
+}
+
+function removeLogo() {
+  logoPreview.value = '';
+  logoFile.value = null;
 }
 </script>
 
@@ -120,6 +186,70 @@ async function saveSettings() {
             />
             <label class="label">
               <span class="label-text-alt">This name appears when clients discover your server</span>
+            </label>
+          </div>
+
+          <div class="divider"></div>
+
+          <!-- Logo Setting -->
+          <div class="form-control">
+            <label class="label">
+              <span class="label-text font-semibold">Server Logo</span>
+              <span class="label-text-alt text-base-content/50">Branding for your server</span>
+            </label>
+
+            <!-- Current Logo Preview -->
+            <div v-if="logoUrl && !logoPreview" class="mb-4">
+              <div class="text-sm text-base-content/60 mb-2">Current Logo:</div>
+              <div class="avatar">
+                <div class="w-24 rounded">
+                  <img :src="logoUrl" alt="Server Logo" />
+                </div>
+              </div>
+            </div>
+
+            <!-- New Logo Preview -->
+            <div v-if="logoPreview" class="mb-4">
+              <div class="text-sm text-base-content/60 mb-2">New Logo Preview:</div>
+              <div class="flex items-center gap-4">
+                <div class="avatar">
+                  <div class="w-24 rounded">
+                    <img :src="logoPreview" alt="Logo Preview" />
+                  </div>
+                </div>
+                <button @click="removeLogo" class="btn btn-ghost btn-sm">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  Remove
+                </button>
+              </div>
+            </div>
+
+            <!-- File Input -->
+            <div class="flex gap-2">
+              <input
+                type="file"
+                @change="handleLogoSelect"
+                accept="image/*"
+                class="file-input file-input-bordered flex-1"
+                :disabled="isUploadingLogo"
+              />
+              <button
+                v-if="logoFile"
+                @click="uploadLogo"
+                class="btn btn-primary"
+                :disabled="isUploadingLogo"
+              >
+                <span class="loading loading-spinner loading-sm" v-if="isUploadingLogo"></span>
+                <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+                {{ isUploadingLogo ? 'Uploading...' : 'Upload' }}
+              </button>
+            </div>
+            <label class="label">
+              <span class="label-text-alt">Recommended size: 256x256px or larger, PNG or JPG format</span>
             </label>
           </div>
 
