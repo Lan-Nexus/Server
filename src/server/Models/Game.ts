@@ -67,4 +67,10 @@ export default class GameModel extends Model {
   static list() {
     return db.select().from(gamesTable).orderBy(gamesTable.name);
   }
+
+  static async findByGameID(gameID: string) {
+    return db.query.gamesTable.findFirst({ 
+      where: (gamesTable, { eq }) => eq(gamesTable.gameID, gameID) 
+    });
+  }
 }

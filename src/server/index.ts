@@ -11,6 +11,7 @@ import './db.js';
 import Ip from './ip.js';
 import './workers/sendAddress.js';
 import GameSessionModel from './Models/GameSession.js';
+import GameModel from './Models/Game.js';
 import UserModel from './Models/User.js';
 import { GameSessionEvents, type GameSessionEventData } from './websocket/gameSessionEvents.js';
 
@@ -128,8 +129,40 @@ const server = ViteExpress.listen(app, port, () => {
       clientId = sessionData.clientId;
 
       try {
-        // Save session to database
-        const newSession = await GameSessionModel.startSession(sessionData.clientId, sessionData.gameId);
+        let gameId = sessionData.gameId;
+
+        // If steamAppId is provided, look up the game in our database
+        if (sessionData.steamAppId) {
+          console.log('🔍 Looking up game by Steam AppID:', sessionData.steamAppId);
+          let game = await GameModel.findByGameID(sessionData.steamAppId);
+
+          if (!game) {
+            console.log('➕ Steam game not found, adding to database:', sessionData.steamAppId);
+            try {
+              // Add the game using SteamModel
+              const newGameIds = await (await import('./Models/Steam.js')).default.create({ appID: Number(sessionData.steamAppId) });
+              // SteamModel.create returns an array of inserted IDs
+              const newGameId = Array.isArray(newGameIds) ? newGameIds[0].id : newGameIds.id;
+              game = await GameModel.readById(newGameId);
+              console.log('✅ Added Steam game:', game?.name, '(ID:', game?.id, ')');
+            } catch (err) {
+              console.error('❌ Failed to add Steam game:', err);
+            }
+          }
+
+          if (game) {
+            gameId = game.id;
+          } else {
+            console.log('⚠️ Could not add Steam game, using provided gameId:', gameId);
+          }
+        }
+
+        // Save session to database with looked-up gameId and steamAppId
+        const newSession = await GameSessionModel.startSession(
+          sessionData.clientId,
+          gameId,
+          sessionData.steamAppId
+        );
 
         if (newSession) {
           // Fetch user information
@@ -141,6 +174,7 @@ const server = ViteExpress.listen(app, port, () => {
             id: newSession.id,
             clientId: newSession.clientId,
             gameId: newSession.gameId,
+            steamAppId: newSession.steamAppId || undefined,
             startTime: newSession.startTime.toISOString(),
             isActive: newSession.isActive,
             user: {
@@ -187,6 +221,7 @@ const server = ViteExpress.listen(app, port, () => {
               id: updatedSession.id,
               clientId: updatedSession.clientId,
               gameId: updatedSession.gameId,
+              steamAppId: updatedSession.steamAppId || undefined,
               startTime: updatedSession.startTime.toISOString(),
               endTime: updatedSession.endTime?.toISOString(),
               isActive: updatedSession.isActive,
@@ -266,6 +301,7 @@ const server = ViteExpress.listen(app, port, () => {
             id: activeSession.id,
             clientId: activeSession.clientId,
             gameId: activeSession.gameId,
+            steamAppId: activeSession.steamAppId || undefined,
             startTime: activeSession.startTime.toISOString(),
             endTime: activeSession.endTime?.toISOString(),
             isActive: activeSession.isActive,
@@ -310,6 +346,7 @@ const server = ViteExpress.listen(app, port, () => {
                     id: updatedSession.id,
                     clientId: updatedSession.clientId,
                     gameId: updatedSession.gameId,
+                    steamAppId: updatedSession.steamAppId || undefined,
                     startTime: updatedSession.startTime.toISOString(),
                     endTime: updatedSession.endTime?.toISOString(),
                     isActive: updatedSession.isActive,
