@@ -4,6 +4,8 @@ export interface GameSessionEventData {
   id: number;
   clientId: string;
   gameId: number;
+  steamAppId?: string;
+  isInGameList?: boolean;
   startTime: string;
   endTime?: string;
   isActive: number;

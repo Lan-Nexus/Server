@@ -1,0 +1,1 @@
+ALTER TABLE `game_sessions` ADD `steam_app_id` varchar(255);

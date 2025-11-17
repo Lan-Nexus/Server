@@ -94,6 +94,7 @@ export const gameSessionsTable = mysqlTable("game_sessions", {
   id: serial().primaryKey(),
   clientId: varchar("client_id", { length: 255 }).notNull(),
   gameId: int("game_id").notNull(), // Foreign key to gamesTable.id
+  steamAppId: varchar("steam_app_id", { length: 255 }), // Steam AppID if it's a Steam game
   startTime: datetime("start_time").notNull(),
   endTime: datetime("end_time"),
   isActive: int("is_active").notNull().default(1), // 1 = active session, 0 = ended session
@@ -233,6 +234,7 @@ export const gameSessionsSelectSchema = createSelectSchema(gameSessionsTable);
 export const gameSessionsInsertSchema = createInsertSchema(gameSessionsTable, {
   clientId: z.string(),
   gameId: z.number(),
+  steamAppId: z.string().optional(),
   startTime: z.string().transform((val) => new Date(val)),
   endTime: z.union([
     z.string().transform((val) => {
@@ -249,6 +251,7 @@ export const gameSessionsInsertSchema = createInsertSchema(gameSessionsTable, {
 export const gameSessionsUpdateSchema = createUpdateSchema(gameSessionsTable, {
   clientId: z.string().optional(),
   gameId: z.number().optional(),
+  steamAppId: z.string().optional(),
   startTime: z.string().transform((val) => new Date(val)).optional(),
   endTime: z.union([
     z.string().transform((val) => {

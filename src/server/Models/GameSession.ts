@@ -38,13 +38,14 @@ export default class GameSessionModel extends Model {
     await db.delete(gameSessionsTable).where(eq(gameSessionsTable.id, id));
   }
 
-  static async startSession(clientId: string, gameId: number) {
+  static async startSession(clientId: string, gameId: number, steamAppId?: string) {
     // End any existing active sessions for this client
     await this.endActiveSessionsForClient(clientId);
 
     const newSession = await this.create({
       clientId,
       gameId,
+      steamAppId,
       startTime: new Date(),
       isActive: 1
     });
